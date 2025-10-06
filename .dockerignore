@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+
+# Database
+*.sqlite3
+*.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+DEVELOPMENT_ENV.md
+ENVIRONMENT_SETUP.md
+LICENSE
+*.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment variables (keep .env if needed in production, otherwise uncomment)
+.env*
+
+# Static and media files (if collected separately)
+# staticfiles/
+# media/

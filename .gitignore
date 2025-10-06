@@ -1,3 +1,410 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.dev
+.env.test
+.env.prod
+!.env.example
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+users.db
+
+# Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django specific
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Security and sensitive files
+security.log
+backup.log
+performance_metrics.json
+performance_metrics.json.bak
+django.log
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets.json
+credentials.json
+
+# Backup files
+backups/
+backup_management.py
+*.backup
+*.bak
+*.tmp
+*.temp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Node modules (if any frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local development files
+local_settings.py
+settings_local.py
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Backup and recovery files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Performance and monitoring data
+performance_data/
+monitoring_data/
+metrics_data/
+
+# API documentation builds
+schema.yml
+openapi.json
+openapi.yaml
+
+# Database migrations (keep structure, ignore data)
+migrations/*.py
+!migrations/__init__.py
+
+# Sample and example files
+sample_*.py
+example_*.py
+demo_*.py
+create_sample_*.py
+test_*.py
+*_test.py
+
+# Configuration files with sensitive data
+config_local.py
+settings_local.py
+local_config.py
+
+# SSL certificates and keys
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+
+# Docker
+Dockerfile.local
+docker-compose.override.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Ansible
+*.retry
+
+# Kubernetes
+*.kubeconfig
+
+# AWS
+.aws/
+
+# Google Cloud
+.gcloud/
+
+# Azure
+.azure/
+
+# Heroku
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Sentry
+.sentryclirc
+
+# Local development
+.local/
+local/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Django media/static
+media/
+static/
+staticfiles/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+users.db
+
+# Backups
+backups/
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/
+security.log
+backup.log
+performance_metrics.json
+
+# VSCode/IDE
+.vscode/
+.idea/
+
+# Test files
+*.test.py
+test_*.py
+*_test.py
+
+# Migration cache
+migrations/__pycache__/
+api/__pycache__/
+senfi_django_backend/__pycache__/
+
+# Node modules (if any)
+node_modules/
+
+# Others
+.DS_Store
+Thumbs.db
+
+# Remove sample/example/demo files
+sample_*.py
+example_*.py
+demo_*.py
+create_sample_*.py
+
+# Remove performance/monitoring data
+performance_data/
+monitoring_data/
+metrics_data/
+
+# Remove API docs
+schema.yml
+openapi.json
+openapi.yaml
+
+# Remove local config
+local_settings.py
+settings_local.py
+config_local.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

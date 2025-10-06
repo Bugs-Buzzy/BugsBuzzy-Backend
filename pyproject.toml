@@ -1,0 +1,61 @@
+[project]
+name = "BugsBuzzy-Backend"
+version = "0.1.0"
+description = "Frontend for the BugsBuzzy event (Django)"
+authors = [
+    {name = "SSC", email = "ahmz.ut@gmail.com"},
+]
+dependencies = [
+    "django>=5.2.7",
+    "djangorestframework>=3.16.1",
+    "djangorestframework-simplejwt>=5.5.1",
+    "drf-spectacular>=0.28.0",
+    "django-cors-headers>=4.3,<4.4",
+    "python-dotenv>=1.1.1",
+    "dj-database-url>=3.0.1",
+    "gunicorn>=23.0.0",
+    "whitenoise[brotli]>=6.7,<6.8",
+    "psycopg2-binary>=2.9.10",
+    "psutil>=7.1.0",
+    "django-ratelimit>=4.1.0",
+]
+
+requires-python = ">=3.10"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+
+[project.urls]
+Homepage="https://github.com/Bugs-Buzzy/BugsBuzzy-Backend"
+Repository="https://github.com/Bugs-Buzzy/BugsBuzzy-Backend"
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5,<0.6",
+    "black>=24.4,<25.0",
+    "pytest>=8.2,<8.3",
+    "pytest-django>=4.8,<4.9",
+]
+
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "ruff>=0.5,<0.6",
+    "black>=24.4,<25.0",
+    "pytest>=8.2,<8.3",
+    "pytest-django>=4.8,<4.9",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "DJ", "DRF"]
+ignore = []
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.setuptools]
+packages = ["core", "accounts", "jams", "payments"]
