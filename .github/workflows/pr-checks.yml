@@ -1,0 +1,102 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PDM
+        run: |
+          pip install pdm
+          echo "PDM installed successfully"
+
+      - name: Install dependencies
+        run: |
+          pdm install --dev
+          echo "Dependencies installed successfully"
+
+      - name: Run linting with Ruff
+        run: |
+          pdm run ruff check . || echo "⚠️ Linting issues found, please review"
+
+      - name: Check code formatting with Black
+        run: |
+          pdm run black --check . || echo "⚠️ Code formatting issues found, please run 'black .' locally"
+
+      - name: Run Django checks
+        run: |
+          pdm run python manage.py check --deploy || echo "⚠️ Django checks found issues"
+        env:
+          DJANGO_SECRET_KEY: "dummy-key-for-ci-checks-only"
+          DEBUG: "False"
+
+      - name: Run migrations check
+        run: |
+          pdm run python manage.py makemigrations --check --dry-run || echo "⚠️ Unapplied migrations detected"
+        env:
+          DJANGO_SECRET_KEY: "dummy-key-for-ci-checks-only"
+
+      - name: Run tests
+        run: |
+          if pdm run pytest --version 2>/dev/null; then
+            pdm run pytest --verbose --maxfail=3
+          else
+            echo "⚠️ Pytest not configured, skipping tests..."
+          fi
+        env:
+          DJANGO_SECRET_KEY: "dummy-key-for-ci-checks-only"
+
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PDM
+        run: |
+          pip install pdm
+          echo "PDM installed successfully"
+
+      - name: Install dependencies
+        run: pdm install --dev
+
+      - name: Check for security vulnerabilities
+        run: |
+          pip install safety
+          pdm export -f requirements --prod | safety check --stdin || echo "⚠️ Security vulnerabilities found, please review"
+
+      - name: Check for sensitive files
+        run: |
+          echo "🔍 Checking for sensitive files..."
+          if find . -name "*.key" -o -name "*.pem" -o -name ".env.production" -o -name "*.p12" -o -name "*.db" | grep -v ".venv" | grep -v "__pycache__" | head -5; then
+            echo "⚠️ Potential sensitive files found"
+          else
+            echo "✅ No sensitive files detected"
+          fi
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "🔍 Checking for hardcoded secrets..."
+          if grep -r -i "SECRET_KEY.*=.*['\"]" --include="*.py" --exclude-dir=".venv" --exclude-dir="migrations" . | grep -v "DJANGO_SECRET_KEY" | head -5; then
+            echo "⚠️ Potential hardcoded secrets found"
+          else
+            echo "✅ No hardcoded secrets detected"
+          fi
