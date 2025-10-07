@@ -32,6 +32,8 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 # Allow all hosts during development, restrict in production
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
+# Admin panel URL path
+ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/")
 
 # Application definition
 INSTALLED_APPS = [
