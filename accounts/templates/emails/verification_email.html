@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification - BugsBuzzy</title>
+  </head>
+  <body
+    style="
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    "
+  >
+    <div
+      style="
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <div style="text-align: center; margin-bottom: 30px">
+        <h1 style="color: #333; margin: 0">BugsBuzzy</h1>
+        <p style="color: #666; margin: 5px 0">Game Jam Platform</p>
+      </div>
+
+      <h2 style="color: #333; text-align: center; margin-bottom: 20px">
+        Email Verification
+      </h2>
+
+      <p style="font-size: 16px; color: #666; line-height: 1.6">Hello!</p>
+
+      <p style="font-size: 16px; color: #666; line-height: 1.6">
+        Thank you for registering with BugsBuzzy. Please use the following
+        verification code to verify your email address:
+      </p>
+
+      <div
+        style="
+          background-color: #007bff;
+          color: white;
+          padding: 25px;
+          text-align: center;
+          border-radius: 8px;
+          margin: 30px 0;
+        "
+      >
+        <h1
+          style="
+            margin: 0;
+            font-size: 36px;
+            letter-spacing: 8px;
+            font-weight: bold;
+          "
+        >
+          {{ verification_code }}
+        </h1>
+      </div>
+
+      <div
+        style="
+          background-color: #fff3cd;
+          border: 1px solid #ffeaa7;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 20px 0;
+        "
+      >
+        <p style="margin: 0; color: #856404; font-size: 14px">
+          <strong>Important:</strong> This code will expire in 15 minutes. If
+          you didn't request this verification, please ignore this email.
+        </p>
+      </div>
+
+      <p style="font-size: 14px; color: #666; line-height: 1.6">
+        If you're having trouble with the verification process, please contact
+        our support team.
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0" />
+
+      <p style="font-size: 14px; color: #666; text-align: center; margin: 0">
+        Best regards,<br />
+        <strong>The BugsBuzzy Team</strong>
+      </p>
+    </div>
+  </body>
+</html>

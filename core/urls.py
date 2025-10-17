@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
-from django.urls import path
+from django.urls import path, include
 from core import settings
 
 
@@ -31,6 +31,10 @@ def api_root(request):
             "message": "Welcome to the BugsBuzzy API",
             "documentation": "https://bugsbuzzy.com/api/docs/",
             "repository": "https://github.com/Bugs-Buzzy/BugsBuzzy-Backend",
+            "endpoints": {
+                "user_profile": "/api/accounts/profile/",
+                "admin": f"/{settings.ADMIN_URL}",
+            }
         }
     )
 
@@ -39,4 +43,5 @@ urlpatterns = [
     path("", api_root, name="api_root"),
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health_check, name="health_check"),
+    path("api/accounts/", include("accounts.urls")),
 ]
