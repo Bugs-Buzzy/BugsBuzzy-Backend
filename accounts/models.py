@@ -99,7 +99,7 @@ class User(AbstractUser):
     has_paid = models.BooleanField(default=False, null=False, verbose_name="Has Paid")
     profile_completed = models.BooleanField(default=False, verbose_name="Profile Completed")
     
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'normalized_email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'national_code', 'phone_number']
     
     objects = UserManager()

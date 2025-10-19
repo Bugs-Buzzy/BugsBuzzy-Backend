@@ -5,31 +5,17 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
-from .utils import generate_verification_code, send_verification_email, normalize_email
+from .utils import send_verification_email, normalize_email
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True, required=True)
     
     class Meta:
         model = User
-        fields = [
-            'username', 'email', 'password', 'password_confirm',
-            'first_name', 'last_name', 'national_code', 'phone_number',
-            'gender', 'birth_date', 'city', 'university', 'major'
-        ]
-        extra_kwargs = {
-            'email': {'required': True},
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'national_code': {'required': True},
-            'phone_number': {'required': True},
-            'gender': {'required': True},
-            'city': {'required': True},
-            'university': {'required': True},
-            'major': {'required': True},
-        }
+        fields = ['email', 'password', 'password_confirm']
+        extra_kwargs = {'email': {'required': True}}
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -38,41 +24,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
-    
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
-        return value
-    
-    def validate_national_code(self, value):
-        if User.objects.filter(national_code=value).exists():
-            raise serializers.ValidationError("A user with this national code already exists.")
-        return value
-    
-    def validate_phone_number(self, value):
-        if User.objects.filter(phone_number=value).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
+            raise serializers.ValidationError("User already exists.")
         return value
     
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         
-        validated_data['email'] = normalize_email(validated_data['email'])
-        
         # Create user
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(normalize_email=normalize_email(validated_data['email']) ,**validated_data)
         user.set_password(password)
-        
-        # Generate verification code
-        user.verification_code = generate_verification_code()
-        user.code_updated_at = timezone.now()
-        user.save()
-        
-        # Send verification email
-        send_verification_email(user.email, user.verification_code)
         
         return user
     
@@ -94,7 +55,7 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         
         if email and password:
-            user = authenticate(username=email, password=password)
+            user = authenticate(username=normalize_email(email), password=password)
             if not user:
                 raise serializers.ValidationError('Invalid credentials.')
             if not user.is_active:
@@ -170,12 +131,12 @@ class ProfileRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
+            'email', 'first_name', 'last_name',
             'national_code', 'phone_number', 'gender', 'birth_date',
             'city', 'university', 'major', 'is_verified', 'status',
             'created_at', 'last_login', 'last_login_ip', 'email_verified_at'
         ]
-        read_only_fields = ['id', 'email', 'national_code', 'is_verified', 'status', 
+        read_only_fields = ['email', 'national_code', 'is_verified', 'status', 
                            'created_at', 'last_login', 'last_login_ip', 'email_verified_at']
 
 

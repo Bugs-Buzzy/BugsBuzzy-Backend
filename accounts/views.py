@@ -12,7 +12,7 @@ from .serializers import (
     VerificationCodeSerializer,
     SendVerificationCodeSerializer,
 )
-from .utils import send_verification_email
+from .utils import send_verification_email, generate_verification_code
 from datetime import timedelta
 import random
 
@@ -27,7 +27,12 @@ class SignupView(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            # Send verification code
+            user.verification_code = generate_verification_code()
+            user.code_updated_at = timezone.now()
+            user.save()
             send_verification_email(user.email, user.verification_code)
+            
             token = serializer.get_token(user)
             return Response(
                 {
@@ -51,7 +56,7 @@ class SendVerificationCodeView(APIView):
                 {"message": "User already verified"}, status=status.HTTP_409_CONFLICT
             )
         if user.code_updated_at < now() - timedelta(minutes=15):
-            user.verification_code = random.randint(10000, 99999)
+            user.verification_code = generate_verification_code()
             user.try_count = 0
             user.code_updated_at = now()
             user.save()
@@ -84,10 +89,7 @@ class VerifyView(APIView):
 
         serializer = VerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
-            if (
-                    int(serializer.validated_data.get("verification_code"))
-                    == user.verification_code
-            ):
+            if (int(serializer.validated_data.get("verification_code")) == user.verification_code):
                 user.is_verified = True
                 user.status = 'verified'
                 user.email_verified_at = now()
