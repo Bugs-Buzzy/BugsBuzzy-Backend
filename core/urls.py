@@ -44,4 +44,5 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health_check, name="health_check"),
     path("api/accounts/", include("accounts.urls")),
+    path("api/teams/", include("teams.urls")),
 ]

@@ -52,6 +52,8 @@ INSTALLED_APPS = [
 # Your apps
 INSTALLED_APPS += [
     "accounts",
+    "payments",
+    "teams",
 ]
 
 MIDDLEWARE = [
