@@ -1,5 +1,6 @@
 import requests
 import random
+import json
 from datetime import datetime
 from django.shortcuts import redirect
 from rest_framework import status
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from accounts.permissions import IsVerified, ProfileCompleted
 from django.conf import settings
 from .models import Transaction, DiscountCode
-from .utils import calculate_amount
+from .utils import calculate_amount, apply_purchase
 
 
 class PriceView(APIView):
@@ -23,10 +24,10 @@ class PriceView(APIView):
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         
         discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
-        amount = calculate_amount(items, discount)
+        amount, applied = calculate_amount(items, discount)
         
         return Response(
-            {"amount": int(amount), "discount_applied": True if discount else False},
+            {"amount": int(amount), "discount_applied": applied},
             status=status.HTTP_200_OK,
         )
 
@@ -43,7 +44,7 @@ class PaymentView(APIView):
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         
         discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
-        amount = calculate_amount(items, discount)
+        amount, _ = calculate_amount(items, discount)
         order_id = random.randint(100000, 999999)
 
         response = requests.post(
@@ -51,8 +52,8 @@ class PaymentView(APIView):
             json={
                 "merchant": settings.MERCHANT_ID,
                 "amount": int(amount),
-                "callbackUrl": "http://bugsbuzzy.ir/api/payment/callback/",
-                "description": "BugsBuzzy Payment\n" + str(items),
+                "callbackUrl": "https://bugsbuzzy.ir/api/payment/callback/",
+                "description": "BugsBuzzy Payment\n" + json.dumps(items),
                 "orderId": str(order_id),
                 "mobile": user.phone_number,
                 "checkMobileWithCard": False
@@ -66,7 +67,7 @@ class PaymentView(APIView):
                 track_id=str(data["trackId"]),
                 order_id=str(order_id),
                 user=user,
-                items=str(items),
+                items=json.dumps(items),
                 amount=int(amount),
                 discount=discount,
                 gateway_response=data["message"],
@@ -102,19 +103,21 @@ class CallbackView(APIView):
         result = response.json()
         if "status" not in result.keys():
             transaction.status = "failed"
-            transaction.gateway_response = result["message"] if "message" in result.keys() else ""
+            transaction.gateway_response = result.get("message", "")
             transaction.save()
             return redirect(f"https://bugsbuzzy.ir/payment/failed")
         
         if transaction.order_id == str(result["orderId"]) and transaction.amount == int(result["amount"]):
             success = int(result["status"]) in [1, 2]
-            transaction.user.has_paid = success
             transaction.status = "completed" if success else "failed"
             if success:
                 transaction.completed_at = datetime.fromisoformat(result["paidAt"])
-            transaction.card_number = result["cardNumber"]
-            transaction.ref_number = int(result["refNumber"])
-            transaction.gateway_response = result["message"]
+                transaction.user.has_paid = True
+                transaction.user.save()
+                apply_purchase(transaction.items)
+            transaction.card_number = result.get("cardNumber", "")
+            transaction.ref_number = int(result.get("refNumber", "0"))
+            transaction.gateway_response = result.get("message", "")
             transaction.save()
             transaction.user.save()
             return redirect(f"https://bugsbuzzy.ir/payment/{'success' if success else 'failed'}")
