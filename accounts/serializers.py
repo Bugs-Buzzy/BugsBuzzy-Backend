@@ -32,7 +32,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         
         # Create user
-        user = User.objects.create_user(normalize_email=normalize_email(validated_data['email']) ,**validated_data)
+        user = User.objects.create_user(email=validated_data['email'])
         user.set_password(password)
         
         return user

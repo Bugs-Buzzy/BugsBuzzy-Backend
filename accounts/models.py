@@ -44,6 +44,7 @@ class User(AbstractUser):
         ('pending_verification', 'Pending Verification'),
     ]
     
+    username = None
     first_name = models.CharField(max_length=50, verbose_name="First Name")
     last_name = models.CharField(max_length=50, verbose_name="Last Name")
     email = models.EmailField(unique=True, verbose_name="Email Address")
@@ -55,7 +56,6 @@ class User(AbstractUser):
             regex=r'^\d{10}$',
             message='National code must be exactly 10 digits'
         )],
-        unique=True,
         verbose_name="National Code"
     )
     phone_number = models.CharField(
@@ -64,7 +64,6 @@ class User(AbstractUser):
             regex=r'^09\d{9}$',
             message='Phone number must start with 09 and be 11 digits'
         )],
-        unique=True,
         verbose_name="Phone Number"
     )
     gender = models.CharField(
@@ -90,7 +89,7 @@ class User(AbstractUser):
     email_verified_at = models.DateTimeField(null=True, blank=True, verbose_name="Email Verified At")
     
     verification_code = models.PositiveIntegerField(
-        validators=[MinValueValidator(100000), MaxValueValidator(999999)], 
+        validators=[MinValueValidator(100000), MaxValueValidator(999999)],
         null=True, blank=True, verbose_name="Verification Code"
     )
     code_updated_at = models.DateTimeField(default=timezone.now, null=False, blank=False, verbose_name="Code Updated At")
@@ -100,7 +99,7 @@ class User(AbstractUser):
     profile_completed = models.BooleanField(default=False, verbose_name="Profile Completed")
     
     USERNAME_FIELD = 'normalized_email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'national_code', 'phone_number']
+    REQUIRED_FIELDS = ['email']
     
     objects = UserManager()
 

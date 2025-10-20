@@ -29,7 +29,7 @@ class SignupView(APIView):
             user = serializer.save()
             # Send verification code
             user.verification_code = generate_verification_code()
-            user.code_updated_at = timezone.now()
+            user.code_updated_at = now()
             user.save()
             send_verification_email(user.email, user.verification_code)
             
