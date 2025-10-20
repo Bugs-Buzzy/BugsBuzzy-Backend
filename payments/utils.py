@@ -10,7 +10,7 @@ def calculate_amount(items, discount):
         if not item:
             continue
         price = item.amount
-        if re.match(re.escape(discount.target), item.name):
+        if discount and re.match(re.escape(discount.target), item.name):
             price *= (100 - discount.percentage) / 100
         amount += price
         

@@ -5,6 +5,12 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 User = get_user_model()
 
 
+class DiscountCode(models.Model):
+    code = models.CharField(max_length=25, unique=True)
+    percentage = models.IntegerField(null=True, blank=True)
+    target = models.CharField(max_length=127, null=False, blank=False)
+
+
 class Transaction(models.Model):
     PAYMENT_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -16,6 +22,7 @@ class Transaction(models.Model):
     amount = models.IntegerField(null=False, blank=False)
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     items = models.CharField(max_length=255, null=False, blank=False)
+    discount = models.ForeignKey(DiscountCode, on_delete=models.PROTECT, null=True, blank=True)
     
     # Payment gateway information
     track_id = models.CharField(max_length=25, null=False, blank=False, unique=True)
@@ -34,12 +41,6 @@ class Transaction(models.Model):
     
     def __str__(self):
         return f"Payment {self.id} - {self.user.email} - {self.amount} - {self.status}"
-    
-    
-class DiscountCode(models.Model):
-    code = models.CharField(max_length=25, unique=True)
-    percentage = models.IntegerField(null=True, blank=True)
-    target = models.CharField(max_length=127, null=False, blank=False)
 
 
 class PurchasingItem(models.Model):

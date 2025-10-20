@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 from django.shortcuts import redirect
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from accounts.permissions import IsVerified, ProfileCompleted
@@ -16,8 +16,8 @@ class PriceView(APIView):
     permission_classes = [IsAuthenticated, IsVerified, ProfileCompleted]
 
     def get(self, request):
-        discount_code = request.GET.get("discount_code", "")
-        items = request.GET.get("items", [])
+        discount_code = request.data.get("discount_code", "")
+        items = request.data.get("items", [])
         
         if len(items) == 0:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -36,8 +36,8 @@ class PaymentView(APIView):
 
     def post(self, request):
         user = request.user            
-        discount_code = request.GET.get("discount_code", "")
-        items = request.GET.get("items", [])
+        discount_code = request.data.get("discount_code", "")
+        items = request.data.get("items", [])
         
         if len(items) == 0:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -51,7 +51,7 @@ class PaymentView(APIView):
             json={
                 "merchant": settings.MERCHANT_ID,
                 "amount": int(amount),
-                "callbackUrl": "https://bugsbuzzy.ir/api/payment/callback",
+                "callbackUrl": "http://bugsbuzzy.ir/api/payment/callback/",
                 "description": "BugsBuzzy Payment\n" + str(items),
                 "orderId": str(order_id),
                 "mobile": user.phone_number,
@@ -81,10 +81,11 @@ class PaymentView(APIView):
             
             
 class CallbackView(APIView):
+    permission_classes = [AllowAny]
+    
     def post(self, request):
         data = request.data
-        
-        # if int(data["success"]) == 1:
+
         transaction = Transaction.objects.filter(track_id=data["trackId"]).first()
         if not transaction:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -99,8 +100,15 @@ class CallbackView(APIView):
         )
         
         result = response.json()
+        if "status" not in result.keys():
+            transaction.status = "failed"
+            transaction.gateway_response = result["message"] if "message" in result.keys() else ""
+            transaction.save()
+            return redirect(f"https://bugsbuzzy.ir/payment/failed")
+        
         if transaction.order_id == str(result["orderId"]) and transaction.amount == int(result["amount"]):
             success = int(result["status"]) in [1, 2]
+            transaction.user.has_paid = success
             transaction.status = "completed" if success else "failed"
             if success:
                 transaction.completed_at = datetime.fromisoformat(result["paidAt"])
@@ -108,6 +116,7 @@ class CallbackView(APIView):
             transaction.ref_number = int(result["refNumber"])
             transaction.gateway_response = result["message"]
             transaction.save()
+            transaction.user.save()
             return redirect(f"https://bugsbuzzy.ir/payment/{'success' if success else 'failed'}")
         else:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
