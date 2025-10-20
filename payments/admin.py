@@ -1,18 +1,38 @@
 from django.contrib import admin
-from .models import Payment, PaymentMethod
+from .models import Transaction, DiscountCode, PurchasingItem
 
 
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'amount', 'status', 'payment_type', 'team_id', 'created_at']
-    list_filter = ['status', 'payment_type', 'created_at']
-    search_fields = ['user__email', 'transaction_id']
-    readonly_fields = ['created_at', 'updated_at', 'completed_at']
-    ordering = ['-created_at']
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'user', 'amount', 'status', 'track_id',
+        'order_id', 'ref_number', 'created_at', 'completed_at',
+    )
+    list_filter = ('status',)
+    search_fields = (
+        'user__email', 'track_id', 'order_id',
+        'ref_number', 'card_number',
+    )
+    readonly_fields = ('created_at', 'updated_at', 'completed_at')
+    ordering = ('-created_at',)
 
 
-@admin.register(PaymentMethod)
-class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ['name', 'is_active', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['name']
+@admin.register(DiscountCode)
+class DiscountCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'percentage', 'target')
+    search_fields = ('code', 'target')
+    ordering = ('code',)
+
+
+@admin.register(PurchasingItem)
+class PurchasingItemAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'amount', 'initial_count',
+        'purchased_count', 'count',
+    )
+    search_fields = ('name',)
+    ordering = ('name',)
+
+    @admin.display(description='Remaining')
+    def count(self, obj):
+        return obj.count
