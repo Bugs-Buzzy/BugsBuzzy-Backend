@@ -12,3 +12,13 @@ class IsVerified(BasePermission):
             request.user.is_authenticated and 
             request.user.is_verified
         )
+
+
+class ProfileCompleted(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.is_verified and
+            request.user.profile_completed
+        )

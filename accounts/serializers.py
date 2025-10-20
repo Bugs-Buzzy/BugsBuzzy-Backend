@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -88,19 +89,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
                            'created_at', 'last_login', 'last_login_ip', 'email_verified_at']
 
 
-class UserUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            'first_name', 'last_name', 'phone_number', 'gender', 
-            'birth_date', 'city', 'university', 'major'
-        ]
+# class UserUpdateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = [
+#             'first_name', 'last_name', 'phone_number', 'gender', 
+#             'birth_date', 'city', 'university', 'major'
+#         ]
     
-    def validate_phone_number(self, value):
-        # Check if phone number is already taken by another user
-        if User.objects.filter(phone_number=value).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
-        return value
+#     def validate_phone_number(self, value):
+#         # Check if phone number is already taken by another user
+#         if User.objects.filter(phone_number=value).exclude(id=self.instance.id).exists():
+#             raise serializers.ValidationError("A user with this phone number already exists.")
+#         return value
 
 
 class VerificationCodeSerializer(serializers.Serializer):
@@ -145,12 +146,53 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'first_name', 'last_name', 'phone_number', 'gender', 
-            'birth_date', 'city', 'university', 'major'
+            'first_name', 'last_name', 'phone_number', 'gender',
+            'national_code', 'city', 'university', 'major'
         ]
+        extra_kwargs = {
+            field: {
+                "required": False if field in ["city", "university", "major"] else True
+            }
+            for field in fields
+        }
+        
     
     def validate_phone_number(self, value):
-        # Check if phone number is already taken by another user
         if User.objects.filter(phone_number=value).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError("A user with this phone number already exists.")
         return value
+    
+    def validate_national_code(self, value):
+        if User.objects.filter(national_code=value).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError("A user with this national code already exists.")
+        
+        if len(value) != 10 or not value.isdigit():
+            raise serializers.ValidationError("National code should contain only 10 digits.")
+
+        national_code = int(value)
+        control = national_code % 10
+        national_code //= 10
+
+        sum_ = 0
+        for i in range(2, 11):
+            digit = national_code % 10
+            sum_ += digit * i
+            national_code //= 10
+
+        remainder = sum_ % 11
+        new_control = remainder if remainder < 2 else 11 - remainder
+
+        if new_control != control:
+            raise serializers.ValidationError("National code is invalid.")
+        
+        return value
+    
+    def validate_first_name(self, value):
+        if bool(re.match(r"^[\u0621-\u0651\u066B-\u06CC\u200c\s]+$", value)):
+            return value
+        raise serializers.ValidationError("First name should be in persian.")
+    
+    def validate_last_name(self, value):
+        if bool(re.match(r"^[\u0621-\u0651\u066B-\u06CC\u200c\s]+$", value)):
+            return value
+        raise serializers.ValidationError("Last name should be in persian.")
