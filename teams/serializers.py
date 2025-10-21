@@ -18,7 +18,7 @@ class TeamMemberSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TeamMember
-        fields = ['id', 'user', 'is_paid', 'payment_completed_at', 'joined_at']
+        fields = ['id', 'user', 'joined_at']
         read_only_fields = ['id', 'joined_at']
 
 
@@ -29,7 +29,6 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
     leader = UserSerializer(read_only=True)
     is_member = serializers.SerializerMethodField()
     can_join = serializers.SerializerMethodField()
-    payment_status = serializers.SerializerMethodField()
     team_type = serializers.SerializerMethodField()
     
     class Meta:
@@ -37,7 +36,7 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'team_type', 'status', 'invite_code',
             'leader', 'members', 'member_count', 'created_at', 'updated_at', 
-            'is_member', 'can_join', 'payment_status'
+            'is_member', 'can_join'
         ]
         read_only_fields = ['id', 'invite_code', 'leader', 'created_at', 'updated_at']
     
@@ -56,9 +55,6 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
             can_join, _ = obj.can_join(request.user)
             return can_join
         return False
-    
-    def get_payment_status(self, obj):
-        return obj.get_payment_status()
     
     def get_team_type(self, obj):
         return 'in_person'
@@ -71,16 +67,14 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
     leader = UserSerializer(read_only=True)
     is_member = serializers.SerializerMethodField()
     can_join = serializers.SerializerMethodField()
-    payment_status = serializers.SerializerMethodField()
     team_type = serializers.SerializerMethodField()
     
     class Meta:
         model = OnlineTeam
         fields = [
             'id', 'name', 'description', 'team_type', 'status', 'invite_code',
-            'leader', 'members', 'member_count', 'is_paid', 'payment_completed_at',
-            'payment_completed_by', 'created_at', 'updated_at', 'is_member', 
-            'can_join', 'payment_status'
+            'leader', 'members', 'member_count',
+            'created_at', 'updated_at', 'is_member', 'can_join'
         ]
         read_only_fields = ['id', 'invite_code', 'leader', 'created_at', 'updated_at']
     
@@ -99,9 +93,6 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
             can_join, _ = obj.can_join(request.user)
             return can_join
         return False
-    
-    def get_payment_status(self, obj):
-        return obj.get_payment_status()
     
     def get_team_type(self, obj):
         return 'online'

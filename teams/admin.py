@@ -8,7 +8,7 @@ class InPersonTeamMemberInline(admin.TabularInline):
     fk_name = 'in_person_team'
     extra = 0
     readonly_fields = ['joined_at']
-    fields = ['user', 'is_paid', 'payment_completed_at', 'joined_at']
+    fields = ['user', 'joined_at']
     verbose_name = 'Member'
     verbose_name_plural = 'Members'
 
@@ -44,10 +44,10 @@ class TeamTypeFilter(admin.SimpleListFilter):
 class InPersonTeamAdmin(admin.ModelAdmin):
     model = InPersonTeam
     list_display = (
+        'id',
         'name',
         'leader_email',
         'status',
-        'payment_status',
         'member_count',
         'invite_code',
         'created_at',
@@ -106,33 +106,22 @@ class InPersonTeamAdmin(admin.ModelAdmin):
     def member_count(self, obj):
         return obj.get_member_count()
     member_count.short_description = 'Members'
-    
-    def payment_status(self, obj):
-        status = obj.get_payment_status()
-        if status['is_paid']:
-            return format_html('<span style="color: green;">✓ Fully Paid ({}/{})</span>', 
-                             status['paid_members'], status['total_members'])
-        else:
-            return format_html('<span style="color: orange;">{}/{} Paid</span>', 
-                             status['paid_members'], status['total_members'])
-    payment_status.short_description = 'Payment Status'
 
 
 @admin.register(OnlineTeam)
 class OnlineTeamAdmin(admin.ModelAdmin):
     model = OnlineTeam
     list_display = (
+        'id',
         'name',
         'leader_email',
         'status',
-        'payment_status',
         'member_count',
         'invite_code',
         'created_at',
     )
     list_filter = (
         'status',
-        'is_paid',
         'created_at',
         'leader__is_verified',
         'leader__has_paid',
@@ -145,7 +134,7 @@ class OnlineTeamAdmin(admin.ModelAdmin):
         'invite_code',
         'description',
     )
-    readonly_fields = ['invite_code', 'created_at', 'updated_at', 'payment_completed_at']
+    readonly_fields = ['invite_code', 'created_at', 'updated_at']
     inlines = [OnlineTeamMemberInline]
     ordering = ['-created_at']
     filter_horizontal = ()
@@ -156,9 +145,6 @@ class OnlineTeamAdmin(admin.ModelAdmin):
         }),
         ('Leader Information', {
             'fields': ('leader',)
-        }),
-        ('Payment Information', {
-            'fields': ('is_paid', 'payment_completed_by', 'payment_completed_at')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -188,14 +174,6 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     def member_count(self, obj):
         return obj.get_member_count()
     member_count.short_description = 'Members'
-    
-    def payment_status(self, obj):
-        if obj.is_paid:
-            return format_html('<span style="color: green;">✓ Paid by {}</span>', 
-                             obj.payment_completed_by.email if obj.payment_completed_by else 'Unknown')
-        else:
-            return format_html('<span style="color: red;">❌ Not Paid</span>')
-    payment_status.short_description = 'Payment Status'
 
 
 @admin.register(TeamMember)
@@ -205,12 +183,9 @@ class TeamMemberAdmin(admin.ModelAdmin):
         'user_email',
         'team_info',
         'team_type',
-        'is_paid',
-        'payment_completed_at',
         'joined_at',
     )
     list_filter = (
-        'is_paid',
         TeamTypeFilter,
         'joined_at',
         'in_person_team__status',
@@ -230,10 +205,6 @@ class TeamMemberAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Member Information', {
             'fields': ('user', 'in_person_team', 'online_team')
-        }),
-        ('Payment Information', {
-            'fields': ('is_paid', 'payment_completed_at'),
-            'description': 'Payment fields are only relevant for in-person team members'
         }),
         ('System Information', {
             'fields': ('joined_at',),

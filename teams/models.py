@@ -79,10 +79,6 @@ class BaseTeam(models.Model):
         if self.is_member(user):
             return False, "You are already a member of this team"
         
-        # User can't join if they already have a team of this type
-        # if self.__class__.objects.filter(leader=user, status='active').exists():
-        #     return False, f"You already have an active {self.__class__.__name__.lower()}"
-        
         # User can't join if they're already a member of another team of this type
         if self.__class__.__name__ == 'InPersonTeam':
             if TeamMember.objects.filter(user=user, in_person_team__status='active').exists():
@@ -104,35 +100,9 @@ class InPersonTeam(BaseTeam):
     In-person team where each member pays individually.
     Team is qualified when ALL members have paid.
     """
-    
+
     class Meta:
         unique_together = ['leader']
-    
-    def check_payment_status(self):
-        """Check if all members have paid individually."""
-        members = self.get_members()
-        if not members.exists():
-            return False
-        return all(member.is_paid for member in members)
-    
-    def get_payment_status(self):
-        """Get detailed payment status for in-person team."""
-        members = self.get_members()
-        paid_members = members.filter(is_paid=True)
-        return {
-            'is_paid': self.check_payment_status(),
-            'payment_type': 'individual',
-            'total_members': members.count(),
-            'paid_members': paid_members.count(),
-            'unpaid_members': members.count() - paid_members.count(),
-            'members': [
-                {
-                    'user': member.user.email,
-                    'is_paid': member.is_paid,
-                    'payment_completed_at': member.payment_completed_at
-                } for member in members
-            ]
-        }
 
 
 class OnlineTeam(BaseTeam):
@@ -141,41 +111,8 @@ class OnlineTeam(BaseTeam):
     Team is qualified when ANY member pays for the whole team.
     """
     
-    # Payment tracking for online teams
-    is_paid = models.BooleanField(default=False)
-    payment_completed_at = models.DateTimeField(null=True, blank=True)
-    payment_completed_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='payment_completed_online_teams'
-    )
-    
     class Meta:
         unique_together = ['leader']
-    
-    def check_payment_status(self):
-        """Check if team payment is completed."""
-        return self.is_paid
-    
-    def get_payment_status(self):
-        """Get detailed payment status for online team."""
-        return {
-            'is_paid': self.is_paid,
-            'payment_type': 'team',
-            'payment_completed_by': self.payment_completed_by.email if self.payment_completed_by else None,
-            'payment_completed_at': self.payment_completed_at
-        }
-    
-    def mark_payment_completed(self, user):
-        """Mark team payment as completed by a specific user."""
-        self.is_paid = True
-        self.payment_completed_at = timezone.now()
-        self.payment_completed_by = user
-        self.save()
-
-
 
 
 class TeamMember(models.Model):
@@ -200,10 +137,6 @@ class TeamMember(models.Model):
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_memberships')
-    
-    # Individual payment status (only used for in-person teams, ignored for online teams)
-    is_paid = models.BooleanField(default=False)
-    payment_completed_at = models.DateTimeField(null=True, blank=True)
     
     # Timestamps
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -236,10 +169,4 @@ class TeamMember(models.Model):
                 raise ValidationError(message)
         
         super().save(*args, **kwargs)
-    
-    def mark_payment_completed(self):
-        """Mark individual payment as completed (for in-person teams)."""
-        self.is_paid = True
-        self.payment_completed_at = timezone.now()
-        self.save()
 
