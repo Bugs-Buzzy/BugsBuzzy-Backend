@@ -24,7 +24,13 @@ class PriceView(APIView):
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         
         discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
-        amount, applied = calculate_amount(items, discount)
+        amount, applied, not_available = calculate_amount(items, discount)
+        
+        if len(not_available) > 0:
+            return Response(
+                {"Unavailable items": ",".join(not_available)},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
         
         return Response(
             {"amount": int(amount), "discount_applied": applied},
@@ -44,8 +50,14 @@ class PaymentView(APIView):
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         
         discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
-        amount, _ = calculate_amount(items, discount)
+        amount, _, not_available = calculate_amount(items, discount)
         order_id = random.randint(100000, 999999)
+        
+        if len(not_available) > 0:
+            return Response(
+                {"Unavailable items": ",".join(not_available)},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
 
         response = requests.post(
             "https://gateway.zibal.ir/request/lazy",

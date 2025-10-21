@@ -1,9 +1,11 @@
 from rest_framework import generics, status, permissions
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
 from django.contrib.auth import get_user_model
+from accounts.permissions import HasPaid
 
 from .models import InPersonTeam, OnlineTeam, TeamMember
 from .serializers import (
@@ -83,7 +85,7 @@ class OnlineTeamDetailView(generics.RetrieveAPIView):
 
 class InPersonTeamJoinView(APIView):
     """Join an in-person team using invite code."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPaid]
     
     def post(self, request):
         invite_code = request.data.get('invite_code')
@@ -112,7 +114,6 @@ class InPersonTeamJoinView(APIView):
                 user=request.user,
                 in_person_team=team
             )
-            
             team_serializer = InPersonTeamSerializer(team, context={'request': request})
             
             return Response({
@@ -152,7 +153,6 @@ class OnlineTeamJoinView(APIView):
                 user=request.user,
                 online_team=team
             )
-            
             team_serializer = OnlineTeamSerializer(team, context={'request': request})
             
             return Response({
@@ -174,7 +174,7 @@ class InPersonTeamMembersView(generics.ListAPIView):
         
         # Check if user is a member or leader
         if not (team.leader == self.request.user or team.is_member(self.request.user)):
-            raise permissions.PermissionDenied("You are not a member of this team")
+            raise PermissionDenied("You are not a member of this team")
         
         return TeamMember.objects.filter(in_person_team=team)
 
@@ -192,14 +192,14 @@ class OnlineTeamMembersView(generics.ListAPIView):
         
         # Check if user is a member or leader
         if not (team.leader == self.request.user or team.is_member(self.request.user)):
-            raise permissions.PermissionDenied("You are not a member of this team")
+            raise PermissionDenied("You are not a member of this team")
         
         return TeamMember.objects.filter(online_team=team)
 
 
 class InPersonTeamCreateView(APIView):
     """Create a new in-person team."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPaid]
     
     def post(self, request):
         # Check if user already has an active in-person team
@@ -231,6 +231,10 @@ class InPersonTeamCreateView(APIView):
                 description=description,
                 leader=request.user
             )
+            team_member = TeamMember.objects.create(
+                user=request.user,
+                in_person_team=team
+            )
             team_serializer = InPersonTeamSerializer(team, context={'request': request})
             
             return Response({
@@ -241,7 +245,7 @@ class InPersonTeamCreateView(APIView):
 
 class OnlineTeamCreateView(APIView):
     """Create a new online team."""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPaid]
     
     def post(self, request):
         # Check if user already has an active online team
@@ -273,6 +277,10 @@ class OnlineTeamCreateView(APIView):
                 description=description,
                 leader=request.user
             )
+            team_member = TeamMember.objects.create(
+                user=request.user,
+                online_team=team
+            )
             team_serializer = OnlineTeamSerializer(team, context={'request': request})
             
             return Response({
@@ -294,9 +302,10 @@ class InPersonTeamLeaveView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
         
         if team.leader == request.user:
+            team.delete()
             return Response({
-                'error': 'Team leader cannot leave the team. You must disband the team instead.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'Successfully deleted team'
+            }, status=status.HTTP_200_OK)
         
         try:
             team_member = TeamMember.objects.get(in_person_team=team, user=request.user)
@@ -337,39 +346,3 @@ class OnlineTeamLeaveView(APIView):
             return Response({
                 'error': 'You are not a member of this online team'
             }, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TeamCreateView(APIView):
-    """Create a new team (in-person or online)."""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def post(self, request):
-        serializer = TeamCreateSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            with transaction.atomic():
-                team_type = serializer.validated_data['team_type']
-                name = serializer.validated_data['name']
-                description = serializer.validated_data.get('description', '')
-                user = request.user
-                
-                if team_type == 'in_person':
-                    team = InPersonTeam.objects.create(
-                        name=name,
-                        description=description,
-                        leader=user
-                    )
-                    team_serializer = InPersonTeamSerializer(team, context={'request': request})
-                else:  # online
-                    team = OnlineTeam.objects.create(
-                        name=name,
-                        description=description,
-                        leader=user
-                    )
-                    team_serializer = OnlineTeamSerializer(team, context={'request': request})
-                
-                return Response({
-                    'message': f'{team_type.title()} team created successfully',
-                    'team': team_serializer.data
-                }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

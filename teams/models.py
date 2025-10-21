@@ -54,9 +54,12 @@ class BaseTeam(models.Model):
     
     def get_members(self):
         """Get all team members including the leader."""
-        return TeamMember.objects.filter(
-            models.Q(in_person_team=self) | models.Q(online_team=self)
-        ).select_related('user')
+        filters = {}
+        if isinstance(self, InPersonTeam):
+            filters['in_person_team'] = self
+        elif isinstance(self, OnlineTeam):
+            filters['online_team'] = self
+        return TeamMember.objects.filter(**filters).select_related('user')
     
     def get_member_count(self):
         """Get the total number of team members."""
@@ -64,10 +67,12 @@ class BaseTeam(models.Model):
     
     def is_member(self, user):
         """Check if a user is a member of this team."""
-        return TeamMember.objects.filter(
-            models.Q(in_person_team=self) | models.Q(online_team=self),
-            user=user
-        ).exists()
+        filters = {'user': user}
+        if isinstance(self, InPersonTeam):
+            filters['in_person_team'] = self
+        elif isinstance(self, OnlineTeam):
+            filters['online_team'] = self
+        return TeamMember.objects.filter(**filters).exists()
     
     def can_join(self, user):
         """Check if a user can join this team."""
@@ -75,8 +80,8 @@ class BaseTeam(models.Model):
             return False, "You are already a member of this team"
         
         # User can't join if they already have a team of this type
-        if self.__class__.objects.filter(leader=user, status='active').exists():
-            return False, f"You already have an active {self.__class__.__name__.lower()} team"
+        # if self.__class__.objects.filter(leader=user, status='active').exists():
+        #     return False, f"You already have an active {self.__class__.__name__.lower()}"
         
         # User can't join if they're already a member of another team of this type
         if self.__class__.__name__ == 'InPersonTeam':

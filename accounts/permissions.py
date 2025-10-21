@@ -22,3 +22,14 @@ class ProfileCompleted(BasePermission):
             request.user.is_verified and
             request.user.profile_completed
         )
+        
+
+class HasPaid(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.is_verified and
+            request.user.profile_completed and
+            request.user.has_paid
+        )

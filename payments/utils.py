@@ -6,10 +6,14 @@ from .models import PurchasingItem
 def calculate_amount(items, discount):
     amount = 0
     applied = False
+    not_available_list = []
     
     for item_name in items:
         item = PurchasingItem.objects.filter(name=item_name).first()
         if not item:
+            continue
+        if item.count <= 0:
+            not_available_list.append(item.name)
             continue
         price = item.amount
         if discount and re.match(discount.target, item.name):
@@ -17,7 +21,7 @@ def calculate_amount(items, discount):
             applied = True
         amount += price
         
-    return amount * 10, applied
+    return amount * 10, applied, not_available_list
 
 
 def apply_purchase(items_str):
