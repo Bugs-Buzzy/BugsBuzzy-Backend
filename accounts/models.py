@@ -11,8 +11,8 @@ class UserManager(BaseUserManager):
             raise ValueError("The Email field must be set")
 
         # Only set normalized_email if not already provided
-        if 'normalized_email' not in extra_fields:
-            extra_fields['normalized_email'] = normalize_email(email)
+        if "normalized_email" not in extra_fields:
+            extra_fields["normalized_email"] = normalize_email(email)
 
         user = self.model(email=email, **extra_fields)
         user.set_password(password)

@@ -152,7 +152,7 @@ class SendVerificationCodeSerializer(serializers.Serializer):
 
 class ProfileRetrieveSerializer(serializers.ModelSerializer):
     """Serializer for retrieving user profile data"""
-    
+
     has_usable_password = serializers.SerializerMethodField()
 
     class Meta:
@@ -191,7 +191,7 @@ class ProfileRetrieveSerializer(serializers.ModelSerializer):
             "last_login_ip",
             "email_verified_at",
         ]
-    
+
     def get_has_usable_password(self, obj):
         return obj.has_usable_password()
 

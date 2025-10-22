@@ -17,7 +17,7 @@ from .models import User
 from .permissions import IsVerified
 
 # Email validation regex (RFC 5322 simplified)
-EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
 class SendCodeView(APIView):
@@ -25,33 +25,28 @@ class SendCodeView(APIView):
     Send verification code to email (works for both new and existing users)
     No authentication required
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get("email")
         if not email:
-            return Response(
-                {"message": "Email is required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate email format
         if not EMAIL_REGEX.match(email):
-            return Response(
-                {"message": "Invalid email format"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
 
         normalized_email_value = normalize_email(email)
-        
+
         # Get or create user
         user, created = User.objects.get_or_create(
             email=normalized_email_value,
             defaults={
-                'normalized_email': normalized_email_value,
-            }
+                "normalized_email": normalized_email_value,
+            },
         )
-        
+
         # If new user, set unusable password
         if created:
             user.set_unusable_password()
@@ -59,10 +54,10 @@ class SendCodeView(APIView):
 
         # Check rate limiting and code validity
         if (
-            not created and
-            user.verification_code and
-            user.code_updated_at and
-            user.code_updated_at > now() - timedelta(minutes=15)
+            not created
+            and user.verification_code
+            and user.code_updated_at
+            and user.code_updated_at > now() - timedelta(minutes=15)
         ):
             # Code is still valid
             if user.try_count >= 3:
@@ -95,35 +90,30 @@ class VerifyCodeView(APIView):
     """
     Verify code and login/complete registration
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
-        code = request.data.get('verification_code')
-        password = request.data.get('password')  # Only for new users
+        email = request.data.get("email")
+        code = request.data.get("verification_code")
+        password = request.data.get("password")  # Only for new users
 
         if not email or not code:
             return Response(
                 {"message": "Email and verification code are required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate email format
         if not EMAIL_REGEX.match(email):
-            return Response(
-                {"message": "Invalid email format"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
 
         normalized_email_value = normalize_email(email)
 
         try:
             user = User.objects.get(email=normalized_email_value)
         except User.DoesNotExist:
-            return Response(
-                {"message": "Invalid email"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"message": "Invalid email"}, status=status.HTTP_404_NOT_FOUND)
 
         # Check code expiration
         if user.code_updated_at < now() - timedelta(minutes=15):
@@ -163,46 +153,34 @@ class LoginView(APIView):
     """
     Login with email and password
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
+        email = request.data.get("email")
+        password = request.data.get("password")
 
         if not email or not password:
             return Response(
-                {"message": "Email and password are required"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # Validate email format
         if not EMAIL_REGEX.match(email):
-            return Response(
-                {"message": "Invalid email format"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
 
         normalized_email_value = normalize_email(email)
 
         try:
             user = User.objects.get(email=normalized_email_value)
         except User.DoesNotExist:
-            return Response(
-                {"message": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.check_password(password):
-            return Response(
-                {"message": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_active:
-            return Response(
-                {"message": "Account is disabled"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"message": "Account is disabled"}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Update last login
         user.last_login_ip = request.META.get("REMOTE_ADDR")
@@ -244,34 +222,29 @@ class ForgotPasswordView(APIView):
     """
     Reset password by verifying email code
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
-        code = request.data.get('verification_code')
+        email = request.data.get("email")
+        code = request.data.get("verification_code")
 
         if not email or not code:
             return Response(
                 {"message": "Email and verification code are required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate email format
         if not EMAIL_REGEX.match(email):
-            return Response(
-                {"message": "Invalid email format"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
 
         normalized_email_value = normalize_email(email)
 
         try:
             user = User.objects.get(email=normalized_email_value)
         except User.DoesNotExist:
-            return Response(
-                {"message": "Invalid email"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"message": "Invalid email"}, status=status.HTTP_404_NOT_FOUND)
 
         # Check code expiration
         if user.code_updated_at < now() - timedelta(minutes=15):
@@ -318,38 +291,32 @@ class ChangePasswordView(APIView):
 
         if not new_password:
             return Response(
-                {"message": "New password is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "New password is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # If user has a usable password, verify current password
         if user.has_usable_password():
             if not current_password:
                 return Response(
-                    {"message": "Current password is required"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"message": "Current password is required"}, status=status.HTTP_400_BAD_REQUEST
                 )
             if not user.check_password(current_password):
                 return Response(
-                    {"message": "Current password is incorrect"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"message": "Current password is incorrect"}, status=status.HTTP_400_BAD_REQUEST
                 )
 
         # Validate new password
         if len(new_password) < 8:
             return Response(
                 {"message": "Password must be at least 8 characters"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Set new password
         user.set_password(new_password)
         user.save()
 
-        return Response(
-            {"message": "Password changed successfully"},
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
 
 
 class TokenRefreshView(APIView):
