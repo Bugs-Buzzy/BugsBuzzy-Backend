@@ -9,21 +9,38 @@ class DiscountCode(models.Model):
     code = models.CharField(max_length=25, unique=True)
     percentage = models.IntegerField(null=True, blank=True)
     target = models.CharField(max_length=127, null=False, blank=False)
+    max_uses = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Maximum number of times this code can be used. Leave blank for unlimited uses.",
+    )
+    current_uses = models.IntegerField(
+        default=0, help_text="Number of times this code has been used"
+    )
+
+    def is_valid(self):
+        """Check if the discount code is still valid (hasn't exceeded max uses)"""
+        if self.max_uses is None:
+            return True
+        return self.current_uses < self.max_uses
+
+    def __str__(self):
+        return f"{self.code} - {self.percentage}%"
 
 
 class Transaction(models.Model):
     PAYMENT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ("pending", "Pending"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
     ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payments")
     amount = models.IntegerField(null=False, blank=False)
-    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="pending")
     items = models.CharField(max_length=255, null=False, blank=False)
     discount = models.ForeignKey(DiscountCode, on_delete=models.PROTECT, null=True, blank=True)
-    
+
     # Payment gateway information
     track_id = models.CharField(max_length=25, null=False, blank=False, unique=True)
     order_id = models.CharField(max_length=25, null=False, blank=False)
@@ -31,14 +48,14 @@ class Transaction(models.Model):
     result = models.IntegerField(null=True, blank=True)
     card_number = models.CharField(null=True, blank=True)
     ref_number = models.IntegerField(null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
-        ordering = ['-created_at']
-    
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"Payment {self.id} - {self.user.email} - {self.amount} - {self.status}"
 
@@ -46,11 +63,10 @@ class Transaction(models.Model):
 class PurchasingItem(models.Model):
     name = models.CharField(null=False, blank=False, unique=True)
     description = models.CharField(null=True, blank=True)
-    amount = models.IntegerField(null=False, blank=False)   # in Toman
+    amount = models.IntegerField(null=False, blank=False)  # in Toman
     initial_count = models.IntegerField(null=False, blank=False)
     purchased_count = models.IntegerField(null=False, blank=False)
-    
+
     @property
     def count(self):
         return self.initial_count - self.purchased_count
-    

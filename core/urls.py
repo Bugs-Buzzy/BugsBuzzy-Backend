@@ -18,6 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from core import settings
 
 
@@ -29,12 +30,8 @@ def api_root(request):
     return JsonResponse(
         {
             "message": "Welcome to the BugsBuzzy API",
-            "documentation": "https://bugsbuzzy.com/api/docs/",
+            "documentation": "https://bugsbuzzy.ir/api/docs/",
             "repository": "https://github.com/Bugs-Buzzy/BugsBuzzy-Backend",
-            "endpoints": {
-                "user_profile": "/api/accounts/profile/",
-                "admin": f"/{settings.ADMIN_URL}",
-            }
         }
     )
 
@@ -43,7 +40,10 @@ urlpatterns = [
     path("", api_root, name="api_root"),
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health_check, name="health_check"),
-    path("api/accounts/", include("accounts.urls")),
-    path("api/teams/", include("teams.urls")),
-    path("api/payment/", include("payments.urls"))
+    path("accounts/", include("accounts.urls")),
+    path("teams/", include("teams.urls")),
+    path("payment/", include("payments.urls")),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
