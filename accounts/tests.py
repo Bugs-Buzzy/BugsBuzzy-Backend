@@ -12,7 +12,12 @@ from unittest.mock import patch
 User = get_user_model()
 
 
-@override_settings(APPEND_SLASH=False, DEBUG=True)
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 class NewAuthFlowTestCase(APITestCase):
     """Test new authentication flow (send-code → verify-code)"""
 
