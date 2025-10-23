@@ -39,7 +39,9 @@ RUN useradd --create-home appuser
 
 # Copy and set permissions for the entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh && chown -R appuser:appuser /app
+RUN mkdir -p /app/staticfiles && \
+    chmod +x /docker-entrypoint.sh && \
+    chown -R appuser:appuser /app
 
 USER appuser
 

@@ -16,13 +16,21 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env file if it exists
+# This is optional - settings have sensible defaults for testing
+load_dotenv(override=False)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+# Payment
+MERCHANT_ID = os.environ.get("MERCHANT_ID")
+PAYMENT_CALLBACK_URL = os.environ.get("PAYMENT_CALLBACK_URL")
+PAYMENT_SUCCESS_URL = os.environ.get("PAYMENT_SUCCESS_URL")
+PAYMENT_FAILED_URL = os.environ.get("PAYMENT_FAILED_URL")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "your-default-secret-key")
@@ -52,6 +60,8 @@ INSTALLED_APPS = [
 # Your apps
 INSTALLED_APPS += [
     "accounts",
+    "payments",
+    "teams",
 ]
 
 MIDDLEWARE = [
@@ -95,6 +105,14 @@ DATABASES = {
     )
 }
 
+# Cache configuration for throttling
+# Use in-memory cache for development, Redis recommended for production
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -155,7 +173,9 @@ RATELIMIT_IP_META_KEY = "HTTP_X_REAL_IP"
 
 
 # --- CORS Settings ---
-CORS_ALLOW_ALL_ORIGINS = os.environ.get("DJANGO_CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"
+CORS_ALLOW_ALL_ORIGINS = (
+    DEBUG or os.environ.get("DJANGO_CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"
+)
 CORS_ALLOW_CREDENTIALS = True
 
 # If CORS_ALLOW_ALL_ORIGINS is False, use specific origins
@@ -179,7 +199,11 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/day"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+        "price_check": "10/min",  # Prevent brute-force discount code attacks
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -187,6 +211,15 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API for the BugsBuzzy Game Jam platform.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SERVERS": [
+        {"url": FORCE_SCRIPT_NAME if FORCE_SCRIPT_NAME else "", "description": "API Server"},
+    ],
+    "TAGS": [
+        {"name": "Accounts", "description": "User account related endpoints."},
+        {"name": "Payments", "description": "Payment processing endpoints."},
+        {"name": "Teams", "description": "Team management endpoints."},
+    ],
 }
 
 SIMPLE_JWT = {
