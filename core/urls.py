@@ -29,7 +29,7 @@ def health_check(request):
 def api_root(request):
     return JsonResponse(
         {
-            "message": "Welcome to the BugsBuzzy API",
+            "message": "Welcome to the BugsBuzzy API!",
             "documentation": "https://bugsbuzzy.ir/api/docs/",
             "repository": "https://github.com/Bugs-Buzzy/BugsBuzzy-Backend",
         }

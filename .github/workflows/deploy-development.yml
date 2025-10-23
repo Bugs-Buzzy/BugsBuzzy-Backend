@@ -1,4 +1,19 @@
+
 name: Development Deployment
+######## IN CASE OF DEPLOYING ON SERVER ####################################
+# You need to have Docker installed on your development server.
+# Ensure the 'deployer' user exists and has sudo privileges without a password for the deploy script to work.
+# You need to have a deploy.sh script on your server at /usr/local/bin/deploy.sh
+# (`sudo visudo` and add: `deployer ALL=(ALL) NOPASSWD: /usr/local/bin/deploy.sh *`)
+# The script should handle pulling the Docker image and restarting the service.
+######### Note: You must set the following vars and secrets in your repository settings #########
+# Vars:
+#   DEV_DEPLOY: Set to 'true' to enable development deployment
+#   DEV_DEPLOY_HOST: Your development server's IP or hostname
+#   DEV_DEPLOY_SSH_PORT: SSH port for your development server
+# Secrets:
+#   DEV_DEPLOY_SSH_KEY: SSH private key for the deployer user on your development server
+#   GHCR_PAT: Personal Access Token with read:packages scope for GitHub Container Registry
 
 on:
   push:
@@ -56,6 +71,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64 #,linux/arm64
+
+      - name: Deploy Backend to Development
+        if: vars.DEV_DEPLOY == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEV_DEPLOY_HOST }}
+          username: deployer
+          key: ${{ secrets.DEV_DEPLOY_SSH_KEY }}
+          port: ${{ vars.DEV_DEPLOY_SSH_PORT }}
+          script: |
+            echo ${{ env.REG_USERNAME }}:${{ secrets.GHCR_PAT }} | sudo /usr/local/bin/deploy.sh backend-development
 
       - name: Deploy notification
         run: |
