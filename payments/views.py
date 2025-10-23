@@ -73,7 +73,7 @@ class PriceView(APIView):
             return Response({"error": "Items are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Calculate amount without discount
-        amount, _ = calculate_amount(items, None)
+        amount, _, _ = calculate_amount(items, None)
 
         return Response(
             {"amount": int(amount)},
