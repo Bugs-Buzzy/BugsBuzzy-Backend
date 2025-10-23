@@ -1,5 +1,5 @@
 import pytest
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -12,6 +12,7 @@ from unittest.mock import patch
 User = get_user_model()
 
 
+@override_settings(APPEND_SLASH=False, DEBUG=True)
 class NewAuthFlowTestCase(APITestCase):
     """Test new authentication flow (send-code → verify-code)"""
 
@@ -113,7 +114,7 @@ class NewAuthFlowTestCase(APITestCase):
         old_code = user.verification_code
 
         response = self.client.post(
-            self.send_code_url, {"email": "test@example.com"}, format="json", follow=True
+            self.send_code_url, {"email": "test@example.com"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -261,7 +262,7 @@ class NewAuthFlowTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
 
         response = self.client.post(
-            self.change_password_url, {"new_password": "NewPass123"}, format="json", follow=True
+            self.change_password_url, {"new_password": "NewPass123"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -283,8 +284,7 @@ class NewAuthFlowTestCase(APITestCase):
         response = self.client.post(
             self.change_password_url,
             {"current_password": "OldPass123", "new_password": "NewPass456"},
-            format="json",
-            follow=True
+            format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
