@@ -113,7 +113,7 @@ class NewAuthFlowTestCase(APITestCase):
         old_code = user.verification_code
 
         response = self.client.post(
-            self.send_code_url, {"email": "test@example.com"}, format="json"
+            self.send_code_url, {"email": "test@example.com"}, format="json", follow=True
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -261,7 +261,7 @@ class NewAuthFlowTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
 
         response = self.client.post(
-            self.change_password_url, {"new_password": "NewPass123"}, format="json"
+            self.change_password_url, {"new_password": "NewPass123"}, format="json", follow=True
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -284,6 +284,7 @@ class NewAuthFlowTestCase(APITestCase):
             self.change_password_url,
             {"current_password": "OldPass123", "new_password": "NewPass456"},
             format="json",
+            follow=True
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
