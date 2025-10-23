@@ -215,11 +215,6 @@ SPECTACULAR_SETTINGS = {
     "SERVERS": [
         {"url": FORCE_SCRIPT_NAME if FORCE_SCRIPT_NAME else "", "description": "API Server"},
     ],
-    "TAGS": [
-        {"name": "Accounts", "description": "User account related endpoints."},
-        {"name": "Payments", "description": "Payment processing endpoints."},
-        {"name": "Teams", "description": "Team management endpoints."},
-    ],
 }
 
 SIMPLE_JWT = {
