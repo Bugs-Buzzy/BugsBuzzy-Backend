@@ -38,7 +38,7 @@ class MyTeamView(APIView):
         
         if team:
             serializer = InPersonTeamSerializer(team, context={'request': request})
-            return Response(serializer.data)
+            return Response({'team': serializer.data})
         
         return Response({'team': None})
 

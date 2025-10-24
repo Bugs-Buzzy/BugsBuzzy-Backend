@@ -144,13 +144,29 @@ class PaymentView(APIView):
 
     def post(self, request):
         user = request.user
-        discount_code = request.data.get("discount_code", "")
+        discount_code = request.data.get("discount_code", "").strip()
         items = request.data.get("items", [])
 
         if len(items) == 0:
-            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({"error": "Items are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
+        # Validate discount code if provided
+        discount = None
+        if discount_code:
+            discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
+            
+            if not discount:
+                return Response(
+                    {"error": "Invalid discount code"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not discount.is_valid():
+                return Response(
+                    {"error": "Discount code has reached its usage limit"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         amount, _, not_available = calculate_amount(items, discount)
         order_id = random.randint(100000, 999999)
 
