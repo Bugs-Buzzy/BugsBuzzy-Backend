@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models import Q, Count, Sum
 from django.utils.html import format_html
+from django import forms
 import json
 from .models import Transaction, DiscountCode, PurchasingItem
 from .models_proxy import UserPurchasesSummary
@@ -37,16 +38,13 @@ class TransactionAdmin(admin.ModelAdmin):
             try:
                 items_list = json.loads(obj.items)
                 badges = []
-                colors = {
-                    'inperson': '#10b981',
-                    'gamejam': '#3b82f6', 
-                    'thursday_lunch': '#f59e0b',
-                    'friday_lunch': '#f59e0b',
-                }
-                for item in items_list:
-                    item = item.strip()
-                    color = colors.get(item, '#6b7280')
-                    badges.append(f'<span style="background-color:{color};color:white;padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:11px;">{item}</span>')
+                # Get all items and create a color map
+                all_items = {item.name: item.color for item in PurchasingItem.objects.all()}
+                
+                for item_name in items_list:
+                    item_name = item_name.strip()
+                    color = all_items.get(item_name, '#6b7280')
+                    badges.append(f'<span style="background-color:{color};color:white;padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:11px;">{item_name}</span>')
                 return format_html(' '.join(badges))
             except (json.JSONDecodeError, TypeError):
                 return obj.items
@@ -65,10 +63,21 @@ class DiscountCodeAdmin(admin.ModelAdmin):
         return obj.is_valid()
 
 
+class PurchasingItemAdminForm(forms.ModelForm):
+    class Meta:
+        model = PurchasingItem
+        fields = '__all__'
+        widgets = {
+            'color': forms.RadioSelect(attrs={'class': 'color-picker-radio'}),
+        }
+
+
 @admin.register(PurchasingItem)
 class PurchasingItemAdmin(admin.ModelAdmin):
+    form = PurchasingItemAdminForm
     list_display = (
         "name",
+        "color_preview",
         "amount",
         "initial_count",
         "purchased_count",
@@ -77,8 +86,21 @@ class PurchasingItemAdmin(admin.ModelAdmin):
     )
     search_fields = ("name",)
     ordering = ("name",)
+    fields = ("name", "description", "amount", "initial_count", "purchased_count", "color")
     
     change_list_template = 'admin/payments/purchasingitem_changelist.html'
+    
+    class Media:
+        css = {
+            'all': ('admin/css/color_picker.css',)
+        }
+    
+    @admin.display(description="Color")
+    def color_preview(self, obj):
+        return format_html(
+            '<span style="background-color:{};color:white;padding:4px 12px;border-radius:4px;font-weight:bold;">{}</span>',
+            obj.color, obj.name
+        )
 
     @admin.display(description="Remaining")
     def remaining_display(self, obj):
@@ -173,19 +195,16 @@ class UserPurchasesSummaryAdmin(admin.ModelAdmin):
                     pass
         
         if all_items:
-            colors = {
-                'inperson': '#10b981',
-                'gamejam': '#3b82f6',
-                'thursday_lunch': '#f59e0b',
-                'friday_lunch': '#f59e0b',
-            }
+            # Get all items and create a color map
+            items_color_map = {item.name: item.color for item in PurchasingItem.objects.all()}
+            
             badges = []
-            for item in sorted(all_items):
-                color = colors.get(item, '#6b7280')
+            for item_name in sorted(all_items):
+                color = items_color_map.get(item_name, '#6b7280')
                 badges.append(
                     f'<span style="background-color:{color};color:white;'
                     f'padding:3px 10px;border-radius:4px;margin:2px;'
-                    f'display:inline-block;font-size:12px;">{item}</span>'
+                    f'display:inline-block;font-size:12px;">{item_name}</span>'
                 )
             return format_html(' '.join(badges))
         return '-'

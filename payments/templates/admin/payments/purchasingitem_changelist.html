@@ -31,7 +31,7 @@
                 <tr style="text-align: right;">
                     <td style="padding: 8px; border: 1px solid #dee2e6;">{{ forloop.counter }}</td>
                     <td style="padding: 8px; border: 1px solid #dee2e6;">
-                        <a href="{% url 'admin:users_user_change' transaction.user.id %}">
+                        <a href="{% url 'admin:accounts_user_change' transaction.user.id %}">
                             {{ transaction.user.first_name }} {{ transaction.user.last_name }}
                         </a>
                     </td>
