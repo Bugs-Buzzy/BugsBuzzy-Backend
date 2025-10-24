@@ -53,14 +53,68 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(DiscountCode)
 class DiscountCodeAdmin(admin.ModelAdmin):
+    form = DiscountCodeAdminForm
     list_display = ("code", "percentage", "target", "current_uses", "max_uses", "is_valid_display")
     search_fields = ("code", "target")
     ordering = ("code",)
     readonly_fields = ("current_uses",)
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'percentage', 'target_items', 'max_uses', 'current_uses')
+        }),
+        ('Or Enter Regex Manually', {
+            'fields': ('target',),
+            'description': 'Auto-generated from checkboxes above, or enter custom regex pattern'
+        }),
+    )
 
     @admin.display(description="Valid", boolean=True)
     def is_valid_display(self, obj):
         return obj.is_valid()
+
+
+class DiscountCodeAdminForm(forms.ModelForm):
+    target_items = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label='Target Items',
+        help_text='Select items this discount applies to'
+    )
+    
+    class Meta:
+        model = DiscountCode
+        fields = ['code', 'percentage', 'target_items', 'max_uses']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Get all purchasing items for choices
+        items = PurchasingItem.objects.all().values_list('name', 'name')
+        self.fields['target_items'].choices = items
+        
+        # If editing existing discount, parse the regex and set initial values
+        if self.instance and self.instance.pk and self.instance.target:
+            target = self.instance.target.strip('()')
+            if '|' in target:
+                selected_items = target.split('|')
+                self.fields['target_items'].initial = selected_items
+            else:
+                self.fields['target_items'].initial = [target]
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Build regex from selected items
+        selected = self.cleaned_data.get('target_items', [])
+        if selected:
+            if len(selected) == 1:
+                instance.target = selected[0]
+            else:
+                instance.target = f"({'|'.join(selected)})"
+        else:
+            instance.target = ''
+        
+        if commit:
+            instance.save()
+        return instance
 
 
 class PurchasingItemAdminForm(forms.ModelForm):
