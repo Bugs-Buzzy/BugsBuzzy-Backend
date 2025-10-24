@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models import Q, Count, Sum
 from django.utils.html import format_html
+import json
 from .models import Transaction, DiscountCode, PurchasingItem
 from .models_proxy import UserPurchasesSummary
 
@@ -33,19 +34,22 @@ class TransactionAdmin(admin.ModelAdmin):
     @admin.display(description="Purchased Items")
     def purchased_items_display(self, obj):
         if obj.status == "completed" and obj.items:
-            items_list = obj.items.split(',')
-            badges = []
-            colors = {
-                'inperson': '#10b981',
-                'gamejam': '#3b82f6', 
-                'thursday_lunch': '#f59e0b',
-                'friday_lunch': '#f59e0b',
-            }
-            for item in items_list:
-                item = item.strip()
-                color = colors.get(item, '#6b7280')
-                badges.append(f'<span style="background-color:{color};color:white;padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:11px;">{item}</span>')
-            return format_html(' '.join(badges))
+            try:
+                items_list = json.loads(obj.items)
+                badges = []
+                colors = {
+                    'inperson': '#10b981',
+                    'gamejam': '#3b82f6', 
+                    'thursday_lunch': '#f59e0b',
+                    'friday_lunch': '#f59e0b',
+                }
+                for item in items_list:
+                    item = item.strip()
+                    color = colors.get(item, '#6b7280')
+                    badges.append(f'<span style="background-color:{color};color:white;padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:11px;">{item}</span>')
+                return format_html(' '.join(badges))
+            except (json.JSONDecodeError, TypeError):
+                return obj.items
         return '-'
 
 
@@ -88,11 +92,18 @@ class PurchasingItemAdmin(admin.ModelAdmin):
     
     @admin.display(description="Buyers")
     def buyers_count(self, obj):
-        completed_transactions = Transaction.objects.filter(
-            status='completed',
-            items__contains=obj.name
-        ).count()
-        return completed_transactions
+        # Get all completed transactions and filter by checking if item is in JSON array
+        completed_transactions = Transaction.objects.filter(status='completed')
+        count = 0
+        for trans in completed_transactions:
+            if trans.items:
+                try:
+                    items = json.loads(trans.items)
+                    if obj.name in items:
+                        count += 1
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        return count
     
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
@@ -100,10 +111,20 @@ class PurchasingItemAdmin(admin.ModelAdmin):
         # Get buyers for each item
         items_with_buyers = []
         for item in PurchasingItem.objects.all():
-            buyers = Transaction.objects.filter(
-                status='completed',
-                items__contains=item.name
+            all_transactions = Transaction.objects.filter(
+                status='completed'
             ).select_related('user').order_by('-completed_at')
+            
+            # Filter transactions that contain this item
+            buyers = []
+            for trans in all_transactions:
+                if trans.items:
+                    try:
+                        items = json.loads(trans.items)
+                        if item.name in items:
+                            buyers.append(trans)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
             
             items_with_buyers.append({
                 'item': item,
@@ -145,8 +166,11 @@ class UserPurchasesSummaryAdmin(admin.ModelAdmin):
         all_items = set()
         for trans in completed_transactions:
             if trans.items:
-                items = [item.strip() for item in trans.items.split(',')]
-                all_items.update(items)
+                try:
+                    items = json.loads(trans.items)
+                    all_items.update(items)
+                except (json.JSONDecodeError, TypeError):
+                    pass
         
         if all_items:
             colors = {
