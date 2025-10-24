@@ -51,28 +51,6 @@ class TransactionAdmin(admin.ModelAdmin):
         return '-'
 
 
-@admin.register(DiscountCode)
-class DiscountCodeAdmin(admin.ModelAdmin):
-    form = DiscountCodeAdminForm
-    list_display = ("code", "percentage", "target", "current_uses", "max_uses", "is_valid_display")
-    search_fields = ("code", "target")
-    ordering = ("code",)
-    readonly_fields = ("current_uses",)
-    fieldsets = (
-        (None, {
-            'fields': ('code', 'percentage', 'target_items', 'max_uses', 'current_uses')
-        }),
-        ('Or Enter Regex Manually', {
-            'fields': ('target',),
-            'description': 'Auto-generated from checkboxes above, or enter custom regex pattern'
-        }),
-    )
-
-    @admin.display(description="Valid", boolean=True)
-    def is_valid_display(self, obj):
-        return obj.is_valid()
-
-
 class DiscountCodeAdminForm(forms.ModelForm):
     target_items = forms.MultipleChoiceField(
         required=False,
@@ -115,6 +93,28 @@ class DiscountCodeAdminForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+@admin.register(DiscountCode)
+class DiscountCodeAdmin(admin.ModelAdmin):
+    form = DiscountCodeAdminForm
+    list_display = ("code", "percentage", "target", "current_uses", "max_uses", "is_valid_display")
+    search_fields = ("code", "target")
+    ordering = ("code",)
+    readonly_fields = ("current_uses",)
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'percentage', 'target_items', 'max_uses', 'current_uses')
+        }),
+        ('Or Enter Regex Manually', {
+            'fields': ('target',),
+            'description': 'Auto-generated from checkboxes above, or enter custom regex pattern'
+        }),
+    )
+
+    @admin.display(description="Valid", boolean=True)
+    def is_valid_display(self, obj):
+        return obj.is_valid()
 
 
 class PurchasingItemAdminForm(forms.ModelForm):
