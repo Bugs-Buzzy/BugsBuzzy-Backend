@@ -216,9 +216,10 @@ class UserPurchasesSummaryAdmin(admin.ModelAdmin):
             status='completed'
         ).aggregate(total=Sum('amount'))['total'] or 0
         
+        formatted_total = f'{total:,}'
         return format_html(
-            '<span style="color:#10b981;font-weight:bold;">{:,} تومان</span>',
-            total
+            '<span style="color:#10b981;font-weight:bold;">{} تومان</span>',
+            formatted_total
         )
     
     @admin.display(description='Transactions')
