@@ -85,7 +85,7 @@ class InPersonTeam(models.Model):
     description = models.TextField(blank=True)
     avatar = models.TextField(
         blank=True,
-        help_text="Base64 data URI for team avatar (max 256x256)"
+        help_text="Base64 data URI for team avatar (128x128)"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='incomplete')
     invite_code = models.CharField(max_length=8, unique=True, editable=False)
@@ -178,6 +178,19 @@ class InPersonMember(models.Model):
             if not can_join:
                 raise ValidationError(message)
         super().save(*args, **kwargs)
+        
+        # Auto-activate team if it reaches minimum members (3)
+        if self.team.member_count >= 3 and self.team.status == 'incomplete':
+            self.team.activate()
+    
+    def delete(self, *args, **kwargs):
+        team = self.team
+        super().delete(*args, **kwargs)
+        
+        # Mark team as incomplete if it drops below minimum
+        if team.member_count < 3 and team.status in ['active', 'attended']:
+            team.status = 'incomplete'
+            team.save(update_fields=['status'])
 
 
 # class InPersonSubmission(models.Model):

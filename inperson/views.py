@@ -69,6 +69,10 @@ class TeamCreateView(APIView):
                 avatar=avatar,
                 leader=request.user
             )
+            
+            # Check if team should be activated (leader count = 1, so need 2 more members minimum)
+            # Since only leader exists, team stays incomplete
+            
             serializer = InPersonTeamSerializer(team, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -93,6 +97,8 @@ class TeamJoinView(APIView):
         
         with db_transaction.atomic():
             InPersonMember.objects.create(user=request.user, team=team)
+            # Member.save() will auto-activate team if needed
+            team.refresh_from_db()  # Refresh to get updated status
             serializer = InPersonTeamSerializer(team, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -112,6 +118,7 @@ class TeamLeaveView(APIView):
             return Response({'error': 'You are not a member of this team'}, status=status.HTTP_404_NOT_FOUND)
         
         membership.delete()
+        # Member.delete() will auto-update team status if needed
         return Response({'message': 'Left team successfully'})
 
 

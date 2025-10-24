@@ -13,10 +13,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class InPersonMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    has_paid = serializers.SerializerMethodField()
     
     class Meta:
         model = InPersonMember
         fields = ['id', 'user', 'has_paid', 'joined_at']
+    
+    def get_has_paid(self, obj):
+        return obj.user.has_paid
 
 
 class InPersonTeamSerializer(serializers.ModelSerializer):

@@ -55,8 +55,8 @@ class InPersonCompetitionAdmin(admin.ModelAdmin):
 class InPersonMemberInline(admin.TabularInline):
     model = InPersonMember
     extra = 0
-    readonly_fields = ('user_info', 'joined_at')
-    fields = ('user_info', 'has_paid', 'joined_at')
+    readonly_fields = ('user_info', 'payment_status_display', 'joined_at')
+    fields = ('user_info', 'payment_status_display', 'joined_at')
     can_delete = True
     
     @admin.display(description='User')
@@ -68,6 +68,12 @@ class InPersonMemberInline(admin.TabularInline):
                 obj.user.email
             )
         return '-'
+    
+    @admin.display(description='Payment')
+    def payment_status_display(self, obj):
+        if obj.user.has_paid:
+            return format_html('<span style="color:#10b981; font-weight:bold;">✅ Paid</span>')
+        return format_html('<span style="color:#f59e0b; font-weight:bold;">⏳ Pending</span>')
 
 
 class TeamSizeFilter(admin.SimpleListFilter):
@@ -156,14 +162,11 @@ class InPersonTeamAdmin(admin.ModelAdmin):
     
     @admin.display(description='Paid')
     def paid_count_display(self, obj):
-        paid = obj.members.filter(has_paid=True).count()
-        # Leader is always counted as paid if they purchased inperson
-        if hasattr(obj.leader, 'purchased_items'):
-            leader_paid = 'inperson' in obj.leader.purchased_items.values_list('item_name', flat=True)
-        else:
-            leader_paid = True  # Assume leader paid (they created the team)
+        # Count members who have paid (using user.has_paid)
+        members_paid = sum(1 for m in obj.members.all() if m.user.has_paid)
+        leader_paid = 1 if obj.leader.has_paid else 0
         
-        total_paid = paid + (1 if leader_paid else 0)
+        total_paid = members_paid + leader_paid
         total = obj.member_count
         
         if total_paid == total:
@@ -200,10 +203,9 @@ class InPersonTeamAdmin(admin.ModelAdmin):
 @admin.register(InPersonMember)
 class InPersonMemberAdmin(admin.ModelAdmin):
     list_display = ('user_info', 'team_info', 'payment_status', 'joined_at')
-    list_filter = ('has_paid', 'joined_at', 'team__status')
+    list_filter = ('joined_at', 'team__status')
     search_fields = ('user__email', 'user__first_name', 'user__last_name', 'team__name')
     readonly_fields = ('joined_at',)
-    actions = ['mark_as_paid', 'mark_as_unpaid']
     
     @admin.display(description='User', ordering='user__email')
     def user_info(self, obj):
@@ -226,25 +228,15 @@ class InPersonMemberAdmin(admin.ModelAdmin):
             )
         return '-'
     
-    @admin.display(description='Payment', ordering='has_paid')
+    @admin.display(description='Payment', ordering='user__has_paid')
     def payment_status(self, obj):
-        if obj.has_paid:
+        if obj.user.has_paid:
             return format_html(
                 '<span style="color:#10b981; font-weight:bold;">✅ Paid</span>'
             )
         return format_html(
             '<span style="color:#f59e0b; font-weight:bold;">⏳ Pending</span>'
         )
-    
-    @admin.action(description='Mark selected members as Paid')
-    def mark_as_paid(self, request, queryset):
-        updated = queryset.update(has_paid=True)
-        self.message_user(request, f'{updated} member(s) marked as paid.')
-    
-    @admin.action(description='Mark selected members as Unpaid')
-    def mark_as_unpaid(self, request, queryset):
-        updated = queryset.update(has_paid=False)
-        self.message_user(request, f'{updated} member(s) marked as unpaid.')
 
 
 # @admin.register(InPersonSubmission)
