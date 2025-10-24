@@ -1,0 +1,63 @@
+{% extends "admin/change_list.html" %}
+
+{% block result_list %}
+{{ block.super }}
+
+{% if items_with_buyers %}
+<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    <h2 style="margin-bottom: 20px; color: #333;">📊 لیست خریداران به تفکیک آیتم</h2>
+    
+    {% for item_data in items_with_buyers %}
+    <div style="margin-bottom: 30px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">
+        <h3 style="margin-bottom: 15px; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+            🎫 {{ item_data.item.name }} 
+            <span style="color: #6c757d; font-size: 14px;">({{ item_data.buyers|length }} خریدار)</span>
+        </h3>
+        
+        {% if item_data.buyers %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa; text-align: right;">
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">#</th>
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">کاربر</th>
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">ایمیل</th>
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">مبلغ پرداختی</th>
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">تاریخ خرید</th>
+                    <th style="padding: 10px; border: 1px solid #dee2e6;">Track ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in item_data.buyers %}
+                <tr style="text-align: right;">
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">{{ forloop.counter }}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">
+                        <a href="{% url 'admin:users_user_change' transaction.user.id %}">
+                            {{ transaction.user.first_name }} {{ transaction.user.last_name }}
+                        </a>
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6; direction: ltr; text-align: left;">
+                        {{ transaction.user.email }}
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">
+                        {{ transaction.amount|floatformat:0 }} تومان
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6; direction: ltr; text-align: left;">
+                        {{ transaction.completed_at|date:"Y-m-d H:i" }}
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6; font-family: monospace;">
+                        <a href="{% url 'admin:payments_transaction_change' transaction.id %}">
+                            {{ transaction.track_id }}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #6c757d; font-style: italic;">هنوز خریداری ندارد</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
