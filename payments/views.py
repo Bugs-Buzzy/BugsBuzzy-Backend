@@ -1,6 +1,7 @@
 import requests
 import random
 import json
+import logging
 from datetime import datetime
 from django.shortcuts import redirect
 from django.db.models import F
@@ -13,6 +14,8 @@ from django.conf import settings
 from .models import Transaction, DiscountCode
 from .utils import calculate_amount, apply_purchase
 from .throttling import PriceCheckThrottle
+
+logger = logging.getLogger(__name__)
 
 
 class PurchasedItemsView(APIView):
@@ -157,21 +160,35 @@ class PaymentView(APIView):
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
 
-        response = requests.post(
-            "https://gateway.zibal.ir/request/lazy",
-            json={
-                "merchant": settings.MERCHANT_ID,
-                "amount": int(amount),
-                "callbackUrl": settings.PAYMENT_CALLBACK_URL,
-                "description": "BugsBuzzy Payment\n" + json.dumps(items),
-                "orderId": str(order_id),
-                "mobile": user.phone_number,
-                "checkMobileWithCard": False,
-            },
-            timeout=10,
-        )
+        try:
+            response = requests.post(
+                "https://gateway.zibal.ir/request/lazy",
+                json={
+                    "merchant": settings.MERCHANT_ID,
+                    "amount": int(amount),
+                    "callbackUrl": settings.PAYMENT_CALLBACK_URL,
+                    "description": "BugsBuzzy Payment\n" + json.dumps(items),
+                    "orderId": str(order_id),
+                    "mobile": user.phone_number,
+                    "checkMobileWithCard": False,
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Zibal gateway error: {str(e)}")
+            return Response(
+                {"error": "Gateway connection failed"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except Exception as e:
+            logger.error(f"Unexpected payment error: {str(e)}")
+            return Response(
+                {"error": "Unexpected payment error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-        data = response.json()
         if "result" in data and data["result"] == 100:
             transaction = Transaction.objects.create(
                 track_id=str(data["trackId"]),
@@ -180,15 +197,17 @@ class PaymentView(APIView):
                 items=json.dumps(items),
                 amount=int(amount),
                 discount=discount,
-                gateway_response=data["message"],
+                gateway_response=data.get("message", ""),
                 result=int(data["result"]),
             )
             return Response(
                 {"redirect_url": f"https://gateway.zibal.ir/start/{data['trackId']}"}, status=200
             )
         else:
+            logger.warning(f"Zibal returned error: {data}")
+            error_message = data.get('message', 'Unknown gateway error')
             return Response(
-                {"error": "Payment service failed"},
+                {"error": f"Gateway error: {error_message}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
