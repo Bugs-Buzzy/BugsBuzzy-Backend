@@ -59,9 +59,15 @@ class DiscountCodeAdminForm(forms.ModelForm):
         help_text='Select items this discount applies to'
     )
     
+    target = forms.CharField(
+        required=False,
+        widget=forms.TextInput,
+        help_text='Auto-generated or enter manually'
+    )
+    
     class Meta:
         model = DiscountCode
-        fields = ['code', 'percentage', 'target_items', 'max_uses']
+        fields = ['code', 'percentage', 'target_items', 'target', 'max_uses']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -80,13 +86,19 @@ class DiscountCodeAdminForm(forms.ModelForm):
     
     def save(self, commit=True):
         instance = super().save(commit=False)
+        
         # Build regex from selected items
         selected = self.cleaned_data.get('target_items', [])
+        manual_target = self.cleaned_data.get('target', '').strip()
+        
+        # Priority: if checkboxes selected, use them; otherwise use manual target
         if selected:
             if len(selected) == 1:
                 instance.target = selected[0]
             else:
                 instance.target = f"({'|'.join(selected)})"
+        elif manual_target:
+            instance.target = manual_target
         else:
             instance.target = ''
         
