@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count, Q
-from .models import InPersonCompetition, InPersonTeam, InPersonMember
+from .models import MIN_MEMBERS_PER_TEAM, InPersonCompetition, InPersonTeam, InPersonMember, MAX_MEMBERS_PER_TEAM
 
 
 @admin.register(InPersonCompetition)
@@ -82,22 +82,22 @@ class TeamSizeFilter(admin.SimpleListFilter):
     
     def lookups(self, request, model_admin):
         return (
-            ('ready', 'Ready (≥3 members)'),
-            ('incomplete', 'Incomplete (<3 members)'),
-            ('full', 'Full (5 members)'),
+            ('ready', 'Ready'),
+            ('incomplete', 'Incomplete'),
+            ('full', 'Full'),
         )
     
     def queryset(self, request, queryset):
         queryset = queryset.annotate(member_count_calc=Count('members'))
         if self.value() == 'ready':
-            # Leader + members >= 3
-            return queryset.filter(member_count_calc__gte=2)
+            # Leader + members >= min
+            return queryset.filter(member_count_calc__gte=MIN_MEMBERS_PER_TEAM - 1)
         if self.value() == 'incomplete':
-            # Leader + members < 3
-            return queryset.filter(member_count_calc__lt=2)
+            # Leader + members < min
+            return queryset.filter(member_count_calc__lt=MIN_MEMBERS_PER_TEAM - 1)
         if self.value() == 'full':
-            # Leader + members = 5
-            return queryset.filter(member_count_calc=4)
+            # Leader + members = max
+            return queryset.filter(member_count_calc=MAX_MEMBERS_PER_TEAM - 1)
         return queryset
 
 
@@ -156,8 +156,8 @@ class InPersonTeamAdmin(admin.ModelAdmin):
         count = obj.member_count
         color = '#10b981' if count >= 3 else '#f59e0b'
         return format_html(
-            '<span style="color:{}; font-weight:bold;">{} / 5</span>',
-            color, count
+            '<span style="color:{}; font-weight:bold;">{} / {}</span>',
+            color, count, MAX_MEMBERS_PER_TEAM
         )
     
     @admin.display(description='Paid')

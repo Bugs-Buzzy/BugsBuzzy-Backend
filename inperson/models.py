@@ -6,6 +6,8 @@ import string
 
 User = get_user_model()
 
+MAX_MEMBERS_PER_TEAM = 3
+MIN_MEMBERS_PER_TEAM = 3
 
 class InPersonCompetition(models.Model):
     """
@@ -151,6 +153,9 @@ class InPersonTeam(models.Model):
         if InPersonTeam.objects.filter(leader=user).exclude(status='disbanded').exists():
             return False, "You are leader of another team"
         
+        if InPersonTeam.member_count.fget(self) >= MAX_MEMBERS_PER_TEAM:
+            return False, "Team is already full"
+        
         return True, "Can join"
 
 
@@ -180,7 +185,7 @@ class InPersonMember(models.Model):
         super().save(*args, **kwargs)
         
         # Auto-activate team if it reaches minimum members (3)
-        if self.team.member_count >= 3 and self.team.status == 'incomplete':
+        if self.team.member_count >= MIN_MEMBERS_PER_TEAM and self.team.status == 'incomplete':
             self.team.activate()
     
     def delete(self, *args, **kwargs):
@@ -188,7 +193,7 @@ class InPersonMember(models.Model):
         super().delete(*args, **kwargs)
         
         # Mark team as incomplete if it drops below minimum
-        if team.member_count < 3 and team.status in ['active', 'attended']:
+        if team.member_count < MIN_MEMBERS_PER_TEAM and team.status in ['active', 'attended']:
             team.status = 'incomplete'
             team.save(update_fields=['status'])
 
