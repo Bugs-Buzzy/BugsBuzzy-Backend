@@ -47,7 +47,7 @@ class Transaction(models.Model):
     gateway_response = models.CharField(null=True, blank=True)
     result = models.IntegerField(null=True, blank=True)
     card_number = models.CharField(null=True, blank=True)
-    ref_number = models.IntegerField(null=True, blank=True)
+    ref_number = models.BigIntegerField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

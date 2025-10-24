@@ -17,6 +17,7 @@ class TransactionAdmin(admin.ModelAdmin):
         "purchased_items_display",
         "track_id",
         "order_id",
+        "ref_number",
         "created_at",
         "completed_at",
     )
