@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import InPersonTeam, InPersonMember, InPersonCompetition
+from .models import InPersonTeam, InPersonMember, InPersonCompetition, InPersonSubmission
 
 User = get_user_model()
 
@@ -43,14 +43,13 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
         return request and request.user == obj.leader
 
 
-# class InPersonSubmissionSerializer(serializers.ModelSerializer):
-#     team = InPersonTeamSerializer(read_only=True)
+class InPersonSubmissionSerializer(serializers.ModelSerializer):
+    team = InPersonTeamSerializer(read_only=True)
     
-#     class Meta:
-#         model = InPersonSubmission
-#         fields = ['id', 'team', 'phase', 'title', 'description', 'file', 
-#                   'game_url', 'score', 'judge_notes', 'submitted_at', 'updated_at']
-#         read_only_fields = ['submitted_at', 'updated_at', 'score', 'judge_notes']
+    class Meta:
+        model = InPersonSubmission
+        fields = ['id', 'team', 'phase', 'content', 'score', 'judge_notes', 'submitted_at', 'updated_at']
+        read_only_fields = ['submitted_at', 'updated_at', 'score', 'judge_notes']
 
 
 class InPersonCompetitionSerializer(serializers.ModelSerializer):

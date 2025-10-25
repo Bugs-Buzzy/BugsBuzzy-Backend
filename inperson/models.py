@@ -6,8 +6,6 @@ import string
 
 User = get_user_model()
 
-MAX_MEMBERS_PER_TEAM = 3
-MIN_MEMBERS_PER_TEAM = 3
 
 class InPersonCompetition(models.Model):
     """
@@ -87,7 +85,7 @@ class InPersonTeam(models.Model):
     description = models.TextField(blank=True)
     avatar = models.TextField(
         blank=True,
-        help_text="Base64 data URI for team avatar (128x128)"
+        help_text="Base64 data URI for team avatar (max 256x256)"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='incomplete')
     invite_code = models.CharField(max_length=8, unique=True, editable=False)
@@ -153,9 +151,6 @@ class InPersonTeam(models.Model):
         if InPersonTeam.objects.filter(leader=user).exclude(status='disbanded').exists():
             return False, "You are leader of another team"
         
-        if InPersonTeam.member_count.fget(self) >= MAX_MEMBERS_PER_TEAM:
-            return False, "Team is already full"
-        
         return True, "Can join"
 
 
@@ -183,53 +178,40 @@ class InPersonMember(models.Model):
             if not can_join:
                 raise ValidationError(message)
         super().save(*args, **kwargs)
-        
-        # Auto-activate team if it reaches minimum members (3)
-        if self.team.member_count >= MIN_MEMBERS_PER_TEAM and self.team.status == 'incomplete':
-            self.team.activate()
-    
-    def delete(self, *args, **kwargs):
-        team = self.team
-        super().delete(*args, **kwargs)
-        
-        # Mark team as incomplete if it drops below minimum
-        if team.member_count < MIN_MEMBERS_PER_TEAM and team.status in ['active', 'attended']:
-            team.status = 'incomplete'
-            team.save(update_fields=['status'])
 
 
-# class InPersonSubmission(models.Model):
-#     """Submission for each phase of in-person competition"""
+class InPersonSubmission(models.Model):
+    """Submission for each phase of in-person competition"""
     
-#     PHASE_CHOICES = [
-#         (0, 'Phase 0: Introduction'),
-#         (1, 'Phase 1: Ideation'),
-#         (2, 'Phase 2: Development'),
-#         (3, 'Phase 3: Polish'),
-#         (4, 'Phase 4: Final Battle'),
-#     ]
+    PHASE_CHOICES = [
+        (0, 'Phase 0: Introduction'),
+        (1, 'Phase 1: Ideation'),
+        (2, 'Phase 2: Development'),
+        (3, 'Phase 3: Polish'),
+        (4, 'Phase 4: Final Battle'),
+    ]
     
-#     team = models.ForeignKey(InPersonTeam, on_delete=models.CASCADE, related_name='submissions')
-#     phase = models.IntegerField(choices=PHASE_CHOICES)
+    team = models.ForeignKey(InPersonTeam, on_delete=models.CASCADE, related_name='submissions')
+    phase = models.IntegerField(choices=PHASE_CHOICES)
     
-#     # Content
-#     title = models.CharField(max_length=200, blank=True)
-#     description = models.TextField(blank=True)
-#     file = models.FileField(upload_to='inperson/submissions/', null=True, blank=True)
-#     game_url = models.URLField(blank=True)
+    # Content
+    title = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='inperson/submissions/', null=True, blank=True)
+    game_url = models.URLField(blank=True)
     
-#     # Judging
-#     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-#     judge_notes = models.TextField(blank=True)
+    # Judging
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    judge_notes = models.TextField(blank=True)
     
-#     submitted_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
-#     class Meta:
-#         unique_together = [['team', 'phase']]
-#         ordering = ['team', 'phase']
-#         verbose_name = 'In-Person Submission'
-#         verbose_name_plural = 'In-Person Submissions'
+    class Meta:
+        unique_together = [['team', 'phase']]
+        ordering = ['team', 'phase']
+        verbose_name = 'In-Person Submission'
+        verbose_name_plural = 'In-Person Submissions'
     
-#     def __str__(self):
-#         return f"{self.team.name} - Phase {self.phase}"
+    def __str__(self):
+        return f"{self.team.name} - Phase {self.phase}"
