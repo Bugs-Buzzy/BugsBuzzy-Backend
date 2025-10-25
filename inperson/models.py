@@ -6,6 +6,9 @@ import string
 
 User = get_user_model()
 
+MIN_MEMBERS_PER_TEAM = 3
+MAX_MEMBERS_PER_TEAM = 3
+
 
 class InPersonCompetition(models.Model):
     """
