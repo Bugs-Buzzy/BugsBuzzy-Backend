@@ -181,6 +181,19 @@ class InPersonMember(models.Model):
             if not can_join:
                 raise ValidationError(message)
         super().save(*args, **kwargs)
+        
+        # Auto-activate team if it reaches minimum members (3)
+        if self.team.member_count >= MIN_MEMBERS_PER_TEAM and self.team.status == 'incomplete':
+            self.team.activate()
+    
+    def delete(self, *args, **kwargs):
+        team = self.team
+        super().delete(*args, **kwargs)
+        
+        # Mark team as incomplete if it drops below minimum
+        if team.member_count < MIN_MEMBERS_PER_TEAM and team.status in ['active', 'attended']:
+            team.status = 'incomplete'
+            team.save(update_fields=['status'])
 
 
 class InPersonSubmission(models.Model):
