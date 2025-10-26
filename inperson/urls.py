@@ -16,6 +16,6 @@ urlpatterns = [
     path('team/<int:team_id>/members/', views.TeamMembersView.as_view(), name='team-members'),
     
     # Submissions
-    # path('submission/create/', views.SubmissionCreateView.as_view(), name='submission-create'),
-    # path('submissions/', views.SubmissionListView.as_view(), name='submission-list'),
+    path('submission/create/', views.SubmissionCreateView.as_view(), name='submission-create'),
+    path('submissions/', views.SubmissionListView.as_view(), name='submission-list'),
 ]

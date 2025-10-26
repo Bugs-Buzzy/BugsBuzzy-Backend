@@ -12,7 +12,7 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
-        "amount",
+        "amount_display",
         "status",
         "purchased_items_display",
         "track_id",
@@ -30,8 +30,18 @@ class TransactionAdmin(admin.ModelAdmin):
         "card_number",
         "items",
     )
-    readonly_fields = ("created_at", "updated_at", "completed_at", "purchased_items_display")
+    readonly_fields = ("created_at", "updated_at", "completed_at", "purchased_items_display", "amount_display")
     ordering = ("-created_at",)
+    
+    @admin.display(description="Amount (تومان)", ordering="amount")
+    def amount_display(self, obj):
+        amount_toman = obj.amount // 10
+        formatted = f'{amount_toman:,}'
+        color = '#10b981' if obj.status == 'completed' else '#f59e0b'
+        return format_html(
+            '<span style="color:{};font-weight:bold;">{} تومان</span>',
+            color, formatted
+        )
     
     @admin.display(description="Purchased Items")
     def purchased_items_display(self, obj):
@@ -283,7 +293,8 @@ class UserPurchasesSummaryAdmin(admin.ModelAdmin):
             status='completed'
         ).aggregate(total=Sum('amount'))['total'] or 0
         
-        formatted_total = f'{total:,}'
+        total_toman = total // 10
+        formatted_total = f'{total_toman:,}'
         return format_html(
             '<span style="color:#10b981;font-weight:bold;">{} تومان</span>',
             formatted_total

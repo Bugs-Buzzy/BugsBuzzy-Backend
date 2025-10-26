@@ -4,11 +4,12 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db import transaction as db_transaction
 from accounts.permissions import HasPurchased
-from .models import InPersonTeam, InPersonMember, InPersonCompetition
+from .models import InPersonTeam, InPersonMember, InPersonCompetition, InPersonSubmission
 from .serializers import (
     InPersonTeamSerializer, 
     InPersonMemberSerializer, 
-    InPersonCompetitionSerializer
+    InPersonCompetitionSerializer,
+    InPersonSubmissionSerializer
 )
 
 
@@ -151,7 +152,7 @@ class TeamUpdateView(APIView):
     """Update team info (leader only)"""
     permission_classes = [permissions.IsAuthenticated]
     
-    def patch(self, request, team_id):
+    def _update_team(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
         
         if 'name' in request.data:
@@ -164,6 +165,12 @@ class TeamUpdateView(APIView):
         team.save()
         serializer = InPersonTeamSerializer(team, context={'request': request})
         return Response(serializer.data)
+    
+    def patch(self, request, team_id):
+        return self._update_team(request, team_id)
+    
+    def put(self, request, team_id):
+        return self._update_team(request, team_id)
 
 
 class TeamMembersView(APIView):
@@ -181,59 +188,69 @@ class TeamMembersView(APIView):
         return Response(serializer.data)
 
 
-# class SubmissionCreateView(APIView):
-#     """Submit for a phase"""
-#     permission_classes = [permissions.IsAuthenticated]
+class SubmissionCreateView(APIView):
+    """Submit for a phase"""
+    permission_classes = [permissions.IsAuthenticated]
     
-#     def post(self, request):
-#         # Get user's team
-#         team = InPersonTeam.objects.filter(leader=request.user, status='active').first()
-#         if not team:
-#             membership = InPersonMember.objects.filter(user=request.user, team__status='active').select_related('team').first()
-#             if membership:
-#                 team = membership.team
+    def post(self, request):
+        # Get user's team
+        team = InPersonTeam.objects.filter(leader=request.user).exclude(status='disbanded').first()
+        if not team:
+            membership = InPersonMember.objects.filter(user=request.user).exclude(team__status='disbanded').select_related('team').first()
+            if membership:
+                team = membership.team
         
-#         if not team:
-#             return Response({'error': 'You are not in a team'}, status=status.HTTP_400_BAD_REQUEST)
+        if not team:
+            return Response({'error': 'You are not in an active team'}, status=status.HTTP_400_BAD_REQUEST)
         
-#         phase = request.data.get('phase')
-#         comp = InPersonCompetition.get_solo()
+        # Team must be active or attended to submit
+        if team.status not in ['active', 'attended']:
+            return Response({'error': 'Your team must be complete to submit'}, status=status.HTTP_400_BAD_REQUEST)
         
-#         # Check if phase is active
-#         phase_active = getattr(comp, f'phase_{phase}_active', False)
-#         if not phase_active:
-#             return Response({'error': f'Phase {phase} is not active yet'}, status=status.HTTP_400_BAD_REQUEST)
+        phase = request.data.get('phase')
+        content = request.data.get('content', '').strip()
         
-#         # Create or update submission
-#         submission, created = InPersonSubmission.objects.update_or_create(
-#             team=team,
-#             phase=phase,
-#             defaults={
-#                 'title': request.data.get('title', ''),
-#                 'description': request.data.get('description', ''),
-#                 'game_url': request.data.get('game_url', ''),
-#             }
-#         )
+        if phase is None:
+            return Response({'error': 'Phase is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-#         serializer = InPersonSubmissionSerializer(submission)
-#         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        if not content:
+            return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        comp = InPersonCompetition.get_solo()
+        
+        # Check if phase is active
+        phase_active = getattr(comp, f'phase_{phase}_active', False)
+        if not phase_active:
+            return Response({'error': f'Phase {phase} is not active yet'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create or update submission
+        submission, created = InPersonSubmission.objects.update_or_create(
+            team=team,
+            phase=phase,
+            defaults={
+                'content': content,
+            }
+        )
+        
+        serializer = InPersonSubmissionSerializer(submission)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
-# class SubmissionListView(APIView):
-#     """Get team's submissions"""
-#     permission_classes = [permissions.IsAuthenticated]
+class SubmissionListView(APIView):
+    """Get team's submissions"""
+    permission_classes = [permissions.IsAuthenticated]
     
-#     def get(self, request):
-#         # Get user's team (any non-disbanded)
-#         team = InPersonTeam.objects.filter(leader=request.user).exclude(status='disbanded').first()
-#         if not team:
-#             membership = InPersonMember.objects.filter(user=request.user).exclude(team__status='disbanded').select_related('team').first()
-#             if membership:
-#                 team = membership.team
+    def get(self, request):
+        # Get user's team (any non-disbanded)
+        team = InPersonTeam.objects.filter(leader=request.user).exclude(status='disbanded').first()
+        if not team:
+            membership = InPersonMember.objects.filter(user=request.user).exclude(team__status='disbanded').select_related('team').first()
+            if membership:
+                team = membership.team
         
-#         if not team:
-#             return Response({'submissions': []})
+        if not team:
+            return Response({'submissions': []})
         
-#         submissions = InPersonSubmission.objects.filter(team=team)
-#         serializer = InPersonSubmissionSerializer(submissions, many=True)
-#         return Response({'submissions': serializer.data})
+        submissions = InPersonSubmission.objects.filter(team=team)
+        serializer = InPersonSubmissionSerializer(submissions, many=True)
+        return Response({'submissions': serializer.data})

@@ -62,6 +62,7 @@ INSTALLED_APPS += [
     "accounts",
     "payments",
     "inperson",
+    "workshops",
 ]
 
 MIDDLEWARE = [
@@ -203,6 +204,7 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "1000/day",
         "price_check": "10/min",  # Prevent brute-force discount code attacks
+        "check_email": "3/min",  # Prevent email enumeration attacks
     },
 }
 

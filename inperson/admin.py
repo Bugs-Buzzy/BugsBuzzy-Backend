@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count, Q
-from .models import MIN_MEMBERS_PER_TEAM, InPersonCompetition, InPersonTeam, InPersonMember, MAX_MEMBERS_PER_TEAM
+from .models import MIN_MEMBERS_PER_TEAM, InPersonCompetition, InPersonTeam, InPersonMember, InPersonSubmission, MAX_MEMBERS_PER_TEAM
 
 
 @admin.register(InPersonCompetition)
@@ -239,9 +239,46 @@ class InPersonMemberAdmin(admin.ModelAdmin):
         )
 
 
-# @admin.register(InPersonSubmission)
-# class InPersonSubmissionAdmin(admin.ModelAdmin):
-#     list_display = ('team', 'phase', 'title', 'score', 'submitted_at')
-#     list_filter = ('phase', 'submitted_at')
-#     search_fields = ('team__name', 'title')
-#     readonly_fields = ('submitted_at', 'updated_at')
+@admin.register(InPersonSubmission)
+class InPersonSubmissionAdmin(admin.ModelAdmin):
+    list_display = ('team', 'phase_display', 'score_display', 'submitted_at')
+    list_filter = ('phase', 'submitted_at')
+    search_fields = ('team__name', 'content')
+    readonly_fields = ('submitted_at', 'updated_at', 'content_preview')
+    
+    fieldsets = (
+        ('Submission Info', {
+            'fields': ('team', 'phase', 'content_preview', 'submitted_at', 'updated_at')
+        }),
+        ('Judging', {
+            'fields': ('score', 'judge_notes')
+        }),
+    )
+    
+    @admin.display(description='Phase', ordering='phase')
+    def phase_display(self, obj):
+        phases = {
+            0: '🎯 Phase 0',
+            1: '💡 Phase 1',
+            2: '🛠️ Phase 2',
+            3: '🎨 Phase 3',
+            4: '🏆 Phase 4',
+        }
+        return phases.get(obj.phase, f'Phase {obj.phase}')
+    
+    @admin.display(description='Score')
+    def score_display(self, obj):
+        if obj.score:
+            color = '#10b981' if obj.score >= 70 else '#f59e0b' if obj.score >= 50 else '#ef4444'
+            return format_html(
+                '<span style="color:{};font-weight:bold;">{}/100</span>',
+                color, obj.score
+            )
+        return format_html('<span style="color:#6b7280;">Not scored</span>')
+    
+    @admin.display(description='Content')
+    def content_preview(self, obj):
+        if obj.content:
+            preview = obj.content[:200] + '...' if len(obj.content) > 200 else obj.content
+            return format_html('<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview)
+        return '-'

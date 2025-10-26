@@ -43,6 +43,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("inperson/", include("inperson.urls")),
     path("payment/", include("payments.urls")),
+    path("workshops/", include("workshops.urls")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),

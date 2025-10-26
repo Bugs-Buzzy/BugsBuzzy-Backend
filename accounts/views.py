@@ -10,6 +10,7 @@ from .serializers import (
     VerificationCodeSerializer,
 )
 from .utils import send_verification_email, generate_verification_code, normalize_email
+from .throttling import CheckEmailThrottle
 from datetime import timedelta
 import re
 
@@ -18,6 +19,45 @@ from .permissions import IsVerified
 
 # Email validation regex (RFC 5322 simplified)
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+
+
+class CheckEmailView(APIView):
+    """
+    Check if email exists and if user has usable password
+    No authentication required, rate limited to 3 requests per minute
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [CheckEmailThrottle]
+
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate email format
+        if not EMAIL_REGEX.match(email):
+            return Response({"message": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        normalized_email_value = normalize_email(email)
+
+        try:
+            user = User.objects.get(email=normalized_email_value)
+            return Response(
+                {
+                    "exists": True,
+                    "has_usable_password": user.has_usable_password(),
+                },
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {
+                    "exists": False,
+                    "has_usable_password": False,
+                },
+                status=status.HTTP_200_OK,
+            )
 
 
 class SendCodeView(APIView):
@@ -129,10 +169,13 @@ class VerifyCodeView(APIView):
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
 
-        # Mark as verified
+        # Mark as verified and invalidate the code
         user.is_verified = True
         user.status = "verified"
         user.email_verified_at = now()
+        user.verification_code = None
+        user.code_updated_at = None
+        user.try_count = 0
         user.save()
 
         # Generate tokens
@@ -260,11 +303,14 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_406_NOT_ACCEPTABLE,
             )
 
-        # Mark as verified and make password unusable
+        # Mark as verified, make password unusable, and invalidate the code
         user.is_verified = True
         user.status = "verified"
         user.email_verified_at = now()
         user.set_unusable_password()
+        user.verification_code = None
+        user.code_updated_at = None
+        user.try_count = 0
         user.save()
 
         # Generate tokens for login
