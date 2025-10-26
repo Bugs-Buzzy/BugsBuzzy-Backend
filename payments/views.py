@@ -154,17 +154,16 @@ class PaymentView(APIView):
         discount = None
         if discount_code:
             discount = DiscountCode.objects.filter(code__iexact=discount_code.lower()).first()
-            
+
             if not discount:
                 return Response(
-                    {"error": "Invalid discount code"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Invalid discount code"}, status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             if not discount.is_valid():
                 return Response(
                     {"error": "Discount code has reached its usage limit"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         amount, _, not_available = calculate_amount(items, discount)
@@ -221,7 +220,7 @@ class PaymentView(APIView):
             )
         else:
             logger.warning(f"Zibal returned error: {data}")
-            error_message = data.get('message', 'Unknown gateway error')
+            error_message = data.get("message", "Unknown gateway error")
             return Response(
                 {"error": f"Gateway error: {error_message}"},
                 status=status.HTTP_502_BAD_GATEWAY,
