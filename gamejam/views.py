@@ -5,6 +5,71 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction as db_transaction
 from .models import OnlineTeam, OnlineMember
 from .serializers import OnlineTeamSerializer, OnlineMemberSerializer
+from .models import OnlineCompetition, OnlineSubmission
+from .serializers import OnlineCompetitionSerializer, OnlineSubmissionSerializer
+
+
+class CompetitionStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        comp = OnlineCompetition.get_solo()
+        serializer = OnlineCompetitionSerializer(comp)
+        return Response(serializer.data)
+
+
+class SubmissionCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        # find the user's team
+        team = OnlineTeam.objects.filter(leader=request.user).first()
+        if not team:
+            membership = OnlineMember.objects.filter(user=request.user).select_related('team').first()
+            if membership:
+                team = membership.team
+
+        if not team:
+            return Response({'error': 'You are not in an active team'}, status=status.HTTP_400_BAD_REQUEST)
+
+        comp = OnlineCompetition.get_solo()
+        if not comp.phase_active:
+            return Response({'error': 'Online competition phase is not active'}, status=status.HTTP_400_BAD_REQUEST)
+
+        title = request.data.get('title', '')
+        description = request.data.get('description', '')
+        game_url = request.data.get('game_url', '')
+        file = request.FILES.get('file')
+
+        submission, created = OnlineSubmission.objects.update_or_create(
+            team=team,
+            defaults={
+                'title': title,
+                'description': description,
+                'game_url': game_url,
+                'file': file,
+            }
+        )
+        serializer = OnlineSubmissionSerializer(submission)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class SubmissionListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        team = OnlineTeam.objects.filter(leader=request.user).first()
+        if not team:
+            membership = OnlineMember.objects.filter(user=request.user).select_related('team').first()
+            if membership:
+                team = membership.team
+
+        if not team:
+            return Response({'submissions': []})
+
+        submissions = OnlineSubmission.objects.filter(team=team)
+        serializer = OnlineSubmissionSerializer(submissions, many=True)
+        return Response({'submissions': serializer.data})
 
 
 class MyTeamView(APIView):

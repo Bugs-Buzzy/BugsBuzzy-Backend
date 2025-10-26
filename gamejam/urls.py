@@ -1,5 +1,5 @@
-from django.urls import path
-from .views import MyTeamView, TeamCreateView, TeamJoinView, TeamLeaveView
+from django.urls import path, include
+from .views import MyTeamView, TeamCreateView, TeamJoinView, TeamLeaveView, CompetitionStatusView, SubmissionCreateView, SubmissionListView
 
 app_name = "gamejam"
 
@@ -8,4 +8,9 @@ urlpatterns = [
     path("create/", TeamCreateView.as_view(), name="create"),
     path("join/", TeamJoinView.as_view(), name="join"),
     path("<int:team_id>/leave/", TeamLeaveView.as_view(), name="leave"),
+    path("competition/", include([
+        path("status/", CompetitionStatusView.as_view(), name="competition_status"),
+        path("submission/", SubmissionCreateView.as_view(), name="submission_create"),
+        path("submissions/", SubmissionListView.as_view(), name="submission_list"),
+    ])),
 ]

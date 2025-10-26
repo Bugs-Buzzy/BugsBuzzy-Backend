@@ -89,3 +89,64 @@ class OnlineMember(models.Model):
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
+
+
+class OnlineCompetition(models.Model):
+    """Singleton model to control the single online competition phase."""
+
+    phase_active = models.BooleanField(default=False, verbose_name="Online Phase Active")
+    title = models.CharField(max_length=200, default="Online Phase", blank=True)
+    description = models.TextField(blank=True, null=True)
+    start = models.DateTimeField(null=True, blank=True)
+    end = models.DateTimeField(null=True, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Online Competition Settings"
+        verbose_name_plural = "Online Competition Settings"
+
+    def save(self, *args, **kwargs):
+        # enforce a single row
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def get_solo(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Online Competition Settings"
+
+
+class OnlineSubmission(models.Model):
+    """Submission model for the single online phase."""
+
+    team = models.ForeignKey(OnlineTeam, on_delete=models.CASCADE, related_name="submissions")
+
+    # Content
+    title = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to="online/submissions/", null=True, blank=True)
+    game_url = models.URLField(blank=True)
+
+    # Judging
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    judge_notes = models.TextField(blank=True)
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["team"]]
+        ordering = ["team"]
+        verbose_name = "Online Submission"
+        verbose_name_plural = "Online Submissions"
+
+    def __str__(self):
+        return f"{self.team.name} - Online Submission"
+

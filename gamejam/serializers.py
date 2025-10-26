@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import OnlineTeam, OnlineMember
+from .models import OnlineTeam, OnlineMember, OnlineSubmission, OnlineCompetition
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -41,3 +41,29 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
 
     def get_member_count(self, obj):
         return obj.member_count
+
+
+class OnlineSubmissionSerializer(serializers.ModelSerializer):
+    team = OnlineTeamSerializer(read_only=True)
+
+    class Meta:
+        model = OnlineSubmission
+        fields = [
+            "id",
+            "team",
+            "title",
+            "description",
+            "file",
+            "game_url",
+            "score",
+            "judge_notes",
+            "submitted_at",
+            "updated_at",
+        ]
+        read_only_fields = ["submitted_at", "updated_at", "score", "judge_notes"]
+
+
+class OnlineCompetitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OnlineCompetition
+        fields = ["phase_active", "title", "description", "start", "end"]
