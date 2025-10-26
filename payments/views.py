@@ -14,6 +14,7 @@ from django.conf import settings
 from .models import Transaction, DiscountCode
 from .utils import calculate_amount, apply_purchase
 from .throttling import PriceCheckThrottle
+from django.apps import apps
 
 logger = logging.getLogger(__name__)
 
@@ -260,6 +261,16 @@ class CallbackView(APIView):
                 transaction.user.has_paid = True
                 transaction.user.save()
                 apply_purchase(transaction.items)
+                # If the transaction includes 'gamejam', activate the leader's online team
+                try:
+                    items = json.loads(transaction.items) if transaction.items else []
+                    if 'gamejam' in items:
+                        OnlineTeam = apps.get_model('gamejam', 'OnlineTeam')
+                        team = OnlineTeam.objects.filter(leader=transaction.user, status='inactive').first()
+                        if team:
+                            team.activate()
+                except Exception:
+                    logger.exception('Failed to activate online team after purchase')
                 # Increment discount code usage count if a discount was applied
                 if transaction.discount:
                     DiscountCode.objects.filter(id=transaction.discount.id).update(

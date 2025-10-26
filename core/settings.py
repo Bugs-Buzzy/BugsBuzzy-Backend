@@ -63,6 +63,7 @@ INSTALLED_APPS += [
     "payments",
     "inperson",
     "workshops",
+    "gamejam",
 ]
 
 MIDDLEWARE = [
