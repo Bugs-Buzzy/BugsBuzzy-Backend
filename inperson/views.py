@@ -152,7 +152,7 @@ class TeamUpdateView(APIView):
     """Update team info (leader only)"""
     permission_classes = [permissions.IsAuthenticated]
     
-    def patch(self, request, team_id):
+    def _update_team(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
         
         if 'name' in request.data:
@@ -165,6 +165,12 @@ class TeamUpdateView(APIView):
         team.save()
         serializer = InPersonTeamSerializer(team, context={'request': request})
         return Response(serializer.data)
+    
+    def patch(self, request, team_id):
+        return self._update_team(request, team_id)
+    
+    def put(self, request, team_id):
+        return self._update_team(request, team_id)
 
 
 class TeamMembersView(APIView):
