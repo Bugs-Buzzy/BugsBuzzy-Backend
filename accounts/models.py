@@ -92,7 +92,7 @@ class User(AbstractUser):
         verbose_name="Verification Code",
     )
     code_updated_at = models.DateTimeField(
-        default=timezone.now, null=False, blank=False, verbose_name="Code Updated At"
+        default=timezone.now, null=True, blank=True, verbose_name="Code Updated At"
     )
     try_count = models.PositiveIntegerField(default=0, verbose_name="Verification Try Count")
 
