@@ -125,7 +125,7 @@ class MinigameSubmitView(APIView):
         discount_code = DiscountCode.objects.create(
             code=coupon_code_str,
             percentage=discount_percentage,
-            target=f"minigame_{user.id}",
+            target="gamejam",
             max_uses=1,  # Single use only
             current_uses=0,
         )
