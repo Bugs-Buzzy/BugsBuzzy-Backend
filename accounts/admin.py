@@ -166,12 +166,12 @@ class CustomUserAdmin(UserAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         # Make optional fields not required in admin
-        if 'university' in form.base_fields:
-            form.base_fields['university'].required = False
-        if 'major' in form.base_fields:
-            form.base_fields['major'].required = False
-        if 'birth_date' in form.base_fields:
-            form.base_fields['birth_date'].required = False
+        if "university" in form.base_fields:
+            form.base_fields["university"].required = False
+        if "major" in form.base_fields:
+            form.base_fields["major"].required = False
+        if "birth_date" in form.base_fields:
+            form.base_fields["birth_date"].required = False
         return form
 
 

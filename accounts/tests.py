@@ -289,7 +289,7 @@ class NewAuthFlowTestCase(APITestCase):
         response = self.client.post(
             self.change_password_url,
             {"current_password": "OldPass123", "new_password": "NewPass456"},
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

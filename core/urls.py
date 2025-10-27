@@ -43,6 +43,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("inperson/", include("inperson.urls")),
     path("payment/", include("payments.urls")),
+    path("minigame/", include("minigame.urls")),
     path("workshops/", include("workshops.urls")),
     path("gamejam/", include("gamejam.urls")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),

@@ -19,11 +19,11 @@ class CheckEmailThrottle(AnonRateThrottle):
         Get real IP address from X-Forwarded-For header when behind nginx.
         Falls back to REMOTE_ADDR if header is not present.
         """
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
+        xff = request.META.get("HTTP_X_FORWARDED_FOR")
         if xff:
             # X-Forwarded-For can contain multiple IPs, get the first one (client IP)
-            return xff.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR')
+            return xff.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR")
 
     def get_cache_key(self, request, view):
         """

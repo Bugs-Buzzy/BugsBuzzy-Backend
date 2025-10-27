@@ -61,6 +61,7 @@ INSTALLED_APPS = [
 INSTALLED_APPS += [
     "accounts",
     "payments",
+    "minigame",
     "inperson",
     "workshops",
     "gamejam",

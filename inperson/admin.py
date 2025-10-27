@@ -1,53 +1,104 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count, Q
-from .models import MIN_MEMBERS_PER_TEAM, InPersonCompetition, InPersonTeam, InPersonMember, InPersonSubmission, MAX_MEMBERS_PER_TEAM
+from .models import (
+    MIN_MEMBERS_PER_TEAM,
+    InPersonCompetition,
+    InPersonTeam,
+    InPersonMember,
+    InPersonSubmission,
+    MAX_MEMBERS_PER_TEAM,
+)
 
 
 @admin.register(InPersonCompetition)
 class InPersonCompetitionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'active_phases_display', 'updated_at')
-    readonly_fields = ('updated_at',)
-    
+    list_display = ("id", "active_phases_display", "updated_at")
+    readonly_fields = ("updated_at",)
+
     fieldsets = (
-        ('Phase 0: Introduction', {
-            'fields': ('phase_0_active', 'phase_0_title', 'phase_0_description', 'phase_0_start', 'phase_0_end'),
-            'classes': ('collapse',)
-        }),
-        ('Phase 1: Ideation', {
-            'fields': ('phase_1_active', 'phase_1_title', 'phase_1_description', 'phase_1_start', 'phase_1_end'),
-            'classes': ('collapse',)
-        }),
-        ('Phase 2: Development', {
-            'fields': ('phase_2_active', 'phase_2_title', 'phase_2_description', 'phase_2_start', 'phase_2_end'),
-            'classes': ('collapse',)
-        }),
-        ('Phase 3: Polish', {
-            'fields': ('phase_3_active', 'phase_3_title', 'phase_3_description', 'phase_3_start', 'phase_3_end'),
-            'classes': ('collapse',)
-        }),
-        ('Phase 4: Final Battle', {
-            'fields': ('phase_4_active', 'phase_4_title', 'phase_4_description', 'phase_4_start', 'phase_4_end'),
-            'classes': ('collapse',)
-        }),
+        (
+            "Phase 0: Introduction",
+            {
+                "fields": (
+                    "phase_0_active",
+                    "phase_0_title",
+                    "phase_0_description",
+                    "phase_0_start",
+                    "phase_0_end",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Phase 1: Ideation",
+            {
+                "fields": (
+                    "phase_1_active",
+                    "phase_1_title",
+                    "phase_1_description",
+                    "phase_1_start",
+                    "phase_1_end",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Phase 2: Development",
+            {
+                "fields": (
+                    "phase_2_active",
+                    "phase_2_title",
+                    "phase_2_description",
+                    "phase_2_start",
+                    "phase_2_end",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Phase 3: Polish",
+            {
+                "fields": (
+                    "phase_3_active",
+                    "phase_3_title",
+                    "phase_3_description",
+                    "phase_3_start",
+                    "phase_3_end",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Phase 4: Final Battle",
+            {
+                "fields": (
+                    "phase_4_active",
+                    "phase_4_title",
+                    "phase_4_description",
+                    "phase_4_start",
+                    "phase_4_end",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
     )
-    
-    @admin.display(description='Active Phases')
+
+    @admin.display(description="Active Phases")
     def active_phases_display(self, obj):
         active = []
         for i in range(5):
-            if getattr(obj, f'phase_{i}_active'):
-                active.append(f'P{i}')
+            if getattr(obj, f"phase_{i}_active"):
+                active.append(f"P{i}")
         if not active:
             return format_html('<span style="color:#6b7280;">None</span>')
         return format_html(
-            '<span style="color:#10b981; font-weight:bold;">{}</span>',
-            ', '.join(active)
+            '<span style="color:#10b981; font-weight:bold;">{}</span>', ", ".join(active)
         )
-    
+
     def has_add_permission(self, request):
         return not InPersonCompetition.objects.exists()
-    
+
     def has_delete_permission(self, request, obj=None):
         return False
 
@@ -55,21 +106,19 @@ class InPersonCompetitionAdmin(admin.ModelAdmin):
 class InPersonMemberInline(admin.TabularInline):
     model = InPersonMember
     extra = 0
-    readonly_fields = ('user_info', 'payment_status_display', 'joined_at')
-    fields = ('user_info', 'payment_status_display', 'joined_at')
+    readonly_fields = ("user_info", "payment_status_display", "joined_at")
+    fields = ("user_info", "payment_status_display", "joined_at")
     can_delete = True
-    
-    @admin.display(description='User')
+
+    @admin.display(description="User")
     def user_info(self, obj):
         if obj.user:
             return format_html(
-                '{} ({})',
-                obj.user.get_full_name() or obj.user.email,
-                obj.user.email
+                "{} ({})", obj.user.get_full_name() or obj.user.email, obj.user.email
             )
-        return '-'
-    
-    @admin.display(description='Payment')
+        return "-"
+
+    @admin.display(description="Payment")
     def payment_status_display(self, obj):
         if obj.user.has_paid:
             return format_html('<span style="color:#10b981; font-weight:bold;">✅ Paid</span>')
@@ -77,25 +126,25 @@ class InPersonMemberInline(admin.TabularInline):
 
 
 class TeamSizeFilter(admin.SimpleListFilter):
-    title = 'team size'
-    parameter_name = 'size'
-    
+    title = "team size"
+    parameter_name = "size"
+
     def lookups(self, request, model_admin):
         return (
-            ('ready', 'Ready'),
-            ('incomplete', 'Incomplete'),
-            ('full', 'Full'),
+            ("ready", "Ready"),
+            ("incomplete", "Incomplete"),
+            ("full", "Full"),
         )
-    
+
     def queryset(self, request, queryset):
-        queryset = queryset.annotate(member_count_calc=Count('members'))
-        if self.value() == 'ready':
+        queryset = queryset.annotate(member_count_calc=Count("members"))
+        if self.value() == "ready":
             # Leader + members >= min
             return queryset.filter(member_count_calc__gte=MIN_MEMBERS_PER_TEAM - 1)
-        if self.value() == 'incomplete':
+        if self.value() == "incomplete":
             # Leader + members < min
             return queryset.filter(member_count_calc__lt=MIN_MEMBERS_PER_TEAM - 1)
-        if self.value() == 'full':
+        if self.value() == "full":
             # Leader + members = max
             return queryset.filter(member_count_calc=MAX_MEMBERS_PER_TEAM - 1)
         return queryset
@@ -103,182 +152,196 @@ class TeamSizeFilter(admin.SimpleListFilter):
 
 @admin.register(InPersonTeam)
 class InPersonTeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'leader_info', 'status_display', 'member_count_display', 'paid_count_display', 'invite_code', 'created_at')
-    list_filter = ('status', TeamSizeFilter, 'created_at')
-    search_fields = ('name', 'leader__email', 'leader__first_name', 'leader__last_name', 'invite_code')
-    readonly_fields = ('invite_code', 'created_at', 'updated_at', 'member_count_display')
-    inlines = [InPersonMemberInline]
-    actions = ['mark_as_active', 'mark_as_attended', 'mark_as_incomplete']
-    date_hierarchy = 'created_at'
-    
-    fieldsets = (
-        ('Basic Info', {
-            'fields': ('name', 'description', 'leader', 'status')
-        }),
-        ('Team Details', {
-            'fields': ('invite_code', 'member_count_display', 'created_at', 'updated_at')
-        }),
+    list_display = (
+        "name",
+        "leader_info",
+        "status_display",
+        "member_count_display",
+        "paid_count_display",
+        "invite_code",
+        "created_at",
     )
-    
-    @admin.display(description='Leader', ordering='leader__email')
+    list_filter = ("status", TeamSizeFilter, "created_at")
+    search_fields = (
+        "name",
+        "leader__email",
+        "leader__first_name",
+        "leader__last_name",
+        "invite_code",
+    )
+    readonly_fields = ("invite_code", "created_at", "updated_at", "member_count_display")
+    inlines = [InPersonMemberInline]
+    actions = ["mark_as_active", "mark_as_attended", "mark_as_incomplete"]
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        ("Basic Info", {"fields": ("name", "description", "leader", "status")}),
+        (
+            "Team Details",
+            {"fields": ("invite_code", "member_count_display", "created_at", "updated_at")},
+        ),
+    )
+
+    @admin.display(description="Leader", ordering="leader__email")
     def leader_info(self, obj):
         if obj.leader:
             full_name = obj.leader.get_full_name()
             return format_html(
                 '<strong>{}</strong><br/><small style="color:#6b7280;">{}</small>',
                 full_name or obj.leader.email,
-                obj.leader.email
+                obj.leader.email,
             )
-        return '-'
-    
-    @admin.display(description='Status')
+        return "-"
+
+    @admin.display(description="Status")
     def status_display(self, obj):
         colors = {
-            'incomplete': '#f59e0b',
-            'active': '#10b981',
-            'attended': '#3b82f6',
-            'disbanded': '#ef4444',
+            "incomplete": "#f59e0b",
+            "active": "#10b981",
+            "attended": "#3b82f6",
+            "disbanded": "#ef4444",
         }
         labels = {
-            'incomplete': '⚠️ Incomplete',
-            'active': '✅ Active',
-            'attended': '🎯 Attended',
-            'disbanded': '❌ Disbanded',
+            "incomplete": "⚠️ Incomplete",
+            "active": "✅ Active",
+            "attended": "🎯 Attended",
+            "disbanded": "❌ Disbanded",
         }
         return format_html(
             '<span style="color:{}; font-weight:bold;">{}</span>',
-            colors.get(obj.status, '#6b7280'),
-            labels.get(obj.status, obj.status)
+            colors.get(obj.status, "#6b7280"),
+            labels.get(obj.status, obj.status),
         )
-    
-    @admin.display(description='Members')
+
+    @admin.display(description="Members")
     def member_count_display(self, obj):
         count = obj.member_count
-        color = '#10b981' if count >= 3 else '#f59e0b'
+        color = "#10b981" if count >= 3 else "#f59e0b"
         return format_html(
             '<span style="color:{}; font-weight:bold;">{} / {}</span>',
-            color, count, MAX_MEMBERS_PER_TEAM
+            color,
+            count,
+            MAX_MEMBERS_PER_TEAM,
         )
-    
-    @admin.display(description='Paid')
+
+    @admin.display(description="Paid")
     def paid_count_display(self, obj):
         # Count members who have paid (using user.has_paid)
         members_paid = sum(1 for m in obj.members.all() if m.user.has_paid)
         leader_paid = 1 if obj.leader.has_paid else 0
-        
+
         total_paid = members_paid + leader_paid
         total = obj.member_count
-        
+
         if total_paid == total:
-            color = '#10b981'
-            icon = '✅'
+            color = "#10b981"
+            icon = "✅"
         elif total_paid > 0:
-            color = '#f59e0b'
-            icon = '⏳'
+            color = "#f59e0b"
+            icon = "⏳"
         else:
-            color = '#ef4444'
-            icon = '❌'
-        
+            color = "#ef4444"
+            icon = "❌"
+
         return format_html(
             '<span style="color:{}; font-weight:bold;">{} {} / {}</span>',
-            color, icon, total_paid, total
+            color,
+            icon,
+            total_paid,
+            total,
         )
-    
-    @admin.action(description='Mark selected teams as Active')
+
+    @admin.action(description="Mark selected teams as Active")
     def mark_as_active(self, request, queryset):
-        updated = queryset.update(status='active')
-        self.message_user(request, f'{updated} team(s) marked as active.')
-    
-    @admin.action(description='Mark selected teams as Attended')
+        updated = queryset.update(status="active")
+        self.message_user(request, f"{updated} team(s) marked as active.")
+
+    @admin.action(description="Mark selected teams as Attended")
     def mark_as_attended(self, request, queryset):
-        updated = queryset.update(status='attended')
-        self.message_user(request, f'{updated} team(s) marked as attended.')
-    
-    @admin.action(description='Mark selected teams as Incomplete')
+        updated = queryset.update(status="attended")
+        self.message_user(request, f"{updated} team(s) marked as attended.")
+
+    @admin.action(description="Mark selected teams as Incomplete")
     def mark_as_incomplete(self, request, queryset):
-        updated = queryset.update(status='incomplete')
-        self.message_user(request, f'{updated} team(s) marked as incomplete.')
+        updated = queryset.update(status="incomplete")
+        self.message_user(request, f"{updated} team(s) marked as incomplete.")
 
 
 @admin.register(InPersonMember)
 class InPersonMemberAdmin(admin.ModelAdmin):
-    list_display = ('user_info', 'team_info', 'payment_status', 'joined_at')
-    list_filter = ('joined_at', 'team__status')
-    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'team__name')
-    readonly_fields = ('joined_at',)
-    
-    @admin.display(description='User', ordering='user__email')
+    list_display = ("user_info", "team_info", "payment_status", "joined_at")
+    list_filter = ("joined_at", "team__status")
+    search_fields = ("user__email", "user__first_name", "user__last_name", "team__name")
+    readonly_fields = ("joined_at",)
+
+    @admin.display(description="User", ordering="user__email")
     def user_info(self, obj):
         if obj.user:
             full_name = obj.user.get_full_name()
             return format_html(
                 '<strong>{}</strong><br/><small style="color:#6b7280;">{}</small>',
                 full_name or obj.user.email,
-                obj.user.email
+                obj.user.email,
             )
-        return '-'
-    
-    @admin.display(description='Team', ordering='team__name')
+        return "-"
+
+    @admin.display(description="Team", ordering="team__name")
     def team_info(self, obj):
         if obj.team:
             return format_html(
                 '<strong>{}</strong><br/><small style="color:#6b7280;">{}</small>',
                 obj.team.name,
-                obj.team.invite_code
+                obj.team.invite_code,
             )
-        return '-'
-    
-    @admin.display(description='Payment', ordering='user__has_paid')
+        return "-"
+
+    @admin.display(description="Payment", ordering="user__has_paid")
     def payment_status(self, obj):
         if obj.user.has_paid:
-            return format_html(
-                '<span style="color:#10b981; font-weight:bold;">✅ Paid</span>'
-            )
-        return format_html(
-            '<span style="color:#f59e0b; font-weight:bold;">⏳ Pending</span>'
-        )
+            return format_html('<span style="color:#10b981; font-weight:bold;">✅ Paid</span>')
+        return format_html('<span style="color:#f59e0b; font-weight:bold;">⏳ Pending</span>')
 
 
 @admin.register(InPersonSubmission)
 class InPersonSubmissionAdmin(admin.ModelAdmin):
-    list_display = ('team', 'phase_display', 'score_display', 'submitted_at')
-    list_filter = ('phase', 'submitted_at')
-    search_fields = ('team__name', 'content')
-    readonly_fields = ('submitted_at', 'updated_at', 'content_preview')
-    
+    list_display = ("team", "phase_display", "score_display", "submitted_at")
+    list_filter = ("phase", "submitted_at")
+    search_fields = ("team__name", "content")
+    readonly_fields = ("submitted_at", "updated_at", "content_preview")
+
     fieldsets = (
-        ('Submission Info', {
-            'fields': ('team', 'phase', 'content_preview', 'submitted_at', 'updated_at')
-        }),
-        ('Judging', {
-            'fields': ('score', 'judge_notes')
-        }),
+        (
+            "Submission Info",
+            {"fields": ("team", "phase", "content_preview", "submitted_at", "updated_at")},
+        ),
+        ("Judging", {"fields": ("score", "judge_notes")}),
     )
-    
-    @admin.display(description='Phase', ordering='phase')
+
+    @admin.display(description="Phase", ordering="phase")
     def phase_display(self, obj):
         phases = {
-            0: '🎯 Phase 0',
-            1: '💡 Phase 1',
-            2: '🛠️ Phase 2',
-            3: '🎨 Phase 3',
-            4: '🏆 Phase 4',
+            0: "🎯 Phase 0",
+            1: "💡 Phase 1",
+            2: "🛠️ Phase 2",
+            3: "🎨 Phase 3",
+            4: "🏆 Phase 4",
         }
-        return phases.get(obj.phase, f'Phase {obj.phase}')
-    
-    @admin.display(description='Score')
+        return phases.get(obj.phase, f"Phase {obj.phase}")
+
+    @admin.display(description="Score")
     def score_display(self, obj):
         if obj.score:
-            color = '#10b981' if obj.score >= 70 else '#f59e0b' if obj.score >= 50 else '#ef4444'
+            color = "#10b981" if obj.score >= 70 else "#f59e0b" if obj.score >= 50 else "#ef4444"
             return format_html(
-                '<span style="color:{};font-weight:bold;">{}/100</span>',
-                color, obj.score
+                '<span style="color:{};font-weight:bold;">{}/100</span>', color, obj.score
             )
         return format_html('<span style="color:#6b7280;">Not scored</span>')
-    
-    @admin.display(description='Content')
+
+    @admin.display(description="Content")
     def content_preview(self, obj):
         if obj.content:
-            preview = obj.content[:200] + '...' if len(obj.content) > 200 else obj.content
-            return format_html('<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview)
-        return '-'
+            preview = obj.content[:200] + "..." if len(obj.content) > 200 else obj.content
+            return format_html(
+                '<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview
+            )
+        return "-"

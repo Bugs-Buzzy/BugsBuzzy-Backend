@@ -21,13 +21,12 @@ class OnlineTeam(models.Model):
 
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True)
-    avatar = models.TextField(
-        blank=True,
-        help_text="Base64 data URI for team avatar (max 256x256)"
-    )
+    avatar = models.TextField(blank=True, help_text="Base64 data URI for team avatar (max 256x256)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="inactive")
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name="led_gamejam_teams")
-    invite_code = models.CharField(max_length=10, unique=True, null=True, blank=True, editable=False)
+    invite_code = models.CharField(
+        max_length=10, unique=True, null=True, blank=True, editable=False
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -50,11 +49,11 @@ class OnlineTeam(models.Model):
             if not self.invite_code:
                 self.invite_code = self.generate_invite_code()
             self.save(update_fields=["status", "invite_code", "updated_at"])
-    
+
     def mark_attended(self):
         """Mark team as attended"""
         self.status = "attended"
-        self.save(update_fields=["status"]) 
+        self.save(update_fields=["status"])
 
     @property
     def member_count(self):
@@ -172,4 +171,3 @@ class OnlineSubmission(models.Model):
 
     def __str__(self):
         return f"{self.team.name} - Online Submission"
-
