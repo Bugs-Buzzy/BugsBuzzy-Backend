@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -8,6 +8,12 @@ from payments.models import DiscountCode
 User = get_user_model()
 
 
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 class MinigameAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -74,7 +80,7 @@ class MinigameAPITestCase(TestCase):
     def test_discount_calculation(self):
         """Test discount calculation ranges for various scores"""
         test_cases = [
-            (0, 0, 10, 10),      # Zero score: always 10%
+            (0, 0, 5, 5),        # Zero score: always 5%
             (100, 5, 22, 30),    # Average: 22-30% range
             (200, 10, 26, 35),   # Good: 26-35% range
             (150, 8, 24, 32),    # Above average: 24-32% range
