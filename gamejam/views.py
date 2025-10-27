@@ -193,6 +193,22 @@ class TeamUpdateView(APIView):
         return self._update_team(request, team_id)
 
 
+class TeamDeleteView(APIView):
+    """Delete inactive team (leader only, before payment)"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def delete(self, request, team_id):
+        team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
+        
+        # Only allow deletion of inactive teams (before payment)
+        if team.status != "inactive":
+            return Response({"error": "Only inactive teams can be deleted. Team has already been activated."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Delete the team completely
+        team.delete()
+        return Response({"message": "Team deleted successfully"})
+
+
 class TeamActivateView(APIView):
     """Activate team after payment (leader only)"""
     permission_classes = [permissions.IsAuthenticated]
