@@ -114,6 +114,10 @@ class TeamLeaveView(APIView):
         if team.leader == request.user:
             return Response({'error': 'Team leader cannot leave. Disband team instead.'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Prevent leaving if team has attended
+        if team.status == 'attended':
+            return Response({'error': 'Cannot leave a team that has attended the event'}, status=status.HTTP_400_BAD_REQUEST)
+        
         membership = InPersonMember.objects.filter(user=request.user, team=team).first()
         if not membership:
             return Response({'error': 'You are not a member of this team'}, status=status.HTTP_404_NOT_FOUND)
@@ -129,6 +133,11 @@ class TeamDisbandView(APIView):
     
     def post(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
+        
+        # Prevent disbanding if team has attended
+        if team.status == 'attended':
+            return Response({'error': 'Cannot disband a team that has attended the event'}, status=status.HTTP_400_BAD_REQUEST)
+        
         team.disband()
         return Response({'message': 'Team disbanded successfully'})
 
@@ -154,6 +163,10 @@ class TeamUpdateView(APIView):
     
     def _update_team(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
+        
+        # Prevent editing if team has attended
+        if team.status == 'attended':
+            return Response({'error': 'Cannot edit a team that has attended the event'}, status=status.HTTP_400_BAD_REQUEST)
         
         if 'name' in request.data:
             team.name = request.data['name']
@@ -231,6 +244,10 @@ class SubmissionCreateView(APIView):
                 'content': content,
             }
         )
+        
+        # Mark team as attended after first submission
+        if created and team.status == 'active':
+            team.mark_attended()
         
         serializer = InPersonSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

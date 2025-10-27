@@ -31,6 +31,10 @@ class SubmissionCreateView(APIView):
 
         if not team:
             return Response({'error': 'You are not in an active team'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Team must be completed (reached MIN_MEMBERS) or attended to submit
+        if team.status not in ['completed', 'attended']:
+            return Response({'error': 'Your team must be complete to submit'}, status=status.HTTP_400_BAD_REQUEST)
 
         comp = OnlineCompetition.get_solo()
         if not comp.phase_active:
@@ -50,6 +54,11 @@ class SubmissionCreateView(APIView):
                 'file': file,
             }
         )
+        
+        # Mark team as attended after first submission
+        if created and team.status == 'completed':
+            team.mark_attended()
+        
         serializer = OnlineSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
@@ -101,6 +110,9 @@ class TeamCreateView(APIView):
 
         if OnlineTeam.objects.filter(leader=request.user).exists():
             return Response({"error": "You already have a gamejam team"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if OnlineMember.objects.filter(user=request.user).exists():
+            return Response({"error": "You are already a member of another team"}, status=status.HTTP_400_BAD_REQUEST)
 
         with db_transaction.atomic():
             team = OnlineTeam.objects.create(name=name, description=description, leader=request.user)
@@ -139,11 +151,58 @@ class TeamLeaveView(APIView):
         team = get_object_or_404(OnlineTeam, id=team_id)
 
         if team.leader == request.user:
-            return Response({"error": "Team leader cannot leave"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Team leader cannot leave the team"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Prevent leaving if team has attended
+        if team.status == "attended":
+            return Response({"error": "Cannot leave a team that has attended the event"}, status=status.HTTP_400_BAD_REQUEST)
 
         membership = OnlineMember.objects.filter(user=request.user, team=team).first()
         if not membership:
             return Response({"error": "You are not a member of this team"}, status=status.HTTP_404_NOT_FOUND)
 
         membership.delete()
+        # OnlineMember.delete() will trigger mark_completed_if_needed() to update status
         return Response({"message": "Left team successfully"})
+
+
+class TeamUpdateView(APIView):
+    """Update team info (leader only)"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def _update_team(self, request, team_id):
+        team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
+        
+        # Prevent editing if team has attended
+        if team.status == "attended":
+            return Response({"error": "Cannot edit a team that has attended the event"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if "name" in request.data:
+            team.name = request.data["name"]
+        if "description" in request.data:
+            team.description = request.data["description"]
+        
+        team.save()
+        serializer = OnlineTeamSerializer(team, context={"request": request})
+        return Response(serializer.data)
+    
+    def patch(self, request, team_id):
+        return self._update_team(request, team_id)
+    
+    def put(self, request, team_id):
+        return self._update_team(request, team_id)
+
+
+class TeamActivateView(APIView):
+    """Activate team after payment (leader only)"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, team_id):
+        team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
+        
+        if team.status != "inactive":
+            return Response({"error": "Team already activated"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        team.activate()
+        serializer = OnlineTeamSerializer(team, context={"request": request})
+        return Response(serializer.data)

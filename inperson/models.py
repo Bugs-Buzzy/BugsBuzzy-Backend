@@ -145,6 +145,9 @@ class InPersonTeam(models.Model):
         return self.members.filter(user=user).exists() or self.leader == user
     
     def can_join(self, user):
+        if self.status == 'attended':
+            return False, "Cannot join a team that has attended the event"
+
         if self.is_member(user):
             return False, "You are already a member of this team"
         

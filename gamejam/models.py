@@ -16,6 +16,7 @@ class OnlineTeam(models.Model):
         ("inactive", "Inactive"),
         ("active", "Active"),
         ("completed", "Completed"),
+        ("attended", "Attended"),
     ]
 
     name = models.CharField(max_length=128)
@@ -44,27 +45,42 @@ class OnlineTeam(models.Model):
             self.status = "active"
             if not self.invite_code:
                 self.invite_code = self.generate_invite_code()
-            self.save(update_fields=["status", "invite_code", "updated_at"]) 
+            self.save(update_fields=["status", "invite_code", "updated_at"])
+    
+    def mark_attended(self):
+        """Mark team as attended"""
+        self.status = "attended"
+        self.save(update_fields=["status"]) 
 
     @property
     def member_count(self):
         return self.members.count() + 1
 
     def can_join(self, user):
+        if self.status == "attended":
+            return False, "Cannot join a team that has attended the event"
         if self.leader == user:
             return False, "Leader is already part of the team"
         if self.members.filter(user=user).exists():
             return False, "You are already a member of this team"
-        if OnlineMember.objects.filter(user=user).exclude(team__status="inactive").exists():
+        if OnlineMember.objects.filter(user=user).exists():
             return False, "You are already a member of another team"
+        if OnlineTeam.objects.filter(leader=user).exists():
+            return False, "You are leader of another team"
         if self.member_count >= MAX_MEMBERS:
             return False, "Team is full"
         return True, "Can join"
 
     def mark_completed_if_needed(self):
-        if self.status == "active" and self.members.exists():
-            self.status = "completed"
-            self.save(update_fields=["status"])
+        # Only update status if team is active or completed (not attended)
+        if self.status in ["active", "completed"]:
+            if self.member_count >= MIN_MEMBERS and self.status != "completed":
+                self.status = "completed"
+                self.save(update_fields=["status"])
+            elif self.member_count < MIN_MEMBERS and self.status == "completed":
+                # Downgrade from completed to active if members drop below minimum
+                self.status = "active"
+                self.save(update_fields=["status"])
 
 
 class OnlineMember(models.Model):
@@ -88,7 +104,10 @@ class OnlineMember(models.Model):
         self.team.mark_completed_if_needed()
 
     def delete(self, *args, **kwargs):
+        team = self.team
         super().delete(*args, **kwargs)
+        # Update team status after member deletion
+        team.mark_completed_if_needed()
 
 
 class OnlineCompetition(models.Model):
