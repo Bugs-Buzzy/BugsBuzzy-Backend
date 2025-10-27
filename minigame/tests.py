@@ -30,10 +30,10 @@ class MinigameAPITestCase(TestCase):
 
         # With probabilistic calculation, discount should be in reasonable range
         discount = response.data["discount_percentage"]
-        self.assertGreaterEqual(discount, 5)  # Minimum possible
+        self.assertGreaterEqual(discount, 10)  # Minimum possible
         self.assertLessEqual(discount, 40)  # Maximum possible
-        self.assertGreaterEqual(discount, 18)  # For this score, should be >= 18
-        self.assertLessEqual(discount, 34)  # For this score, should be <= 34
+        self.assertGreaterEqual(discount, 22)  # For this score, should be >= 22
+        self.assertLessEqual(discount, 30)  # For this score, should be <= 30
 
         # Verify result is saved
         result = MinigameResult.objects.get(user=self.user)
@@ -45,6 +45,7 @@ class MinigameAPITestCase(TestCase):
         self.assertIsNotNone(result.coupon_code)
         self.assertEqual(result.coupon_code.percentage, discount)
         self.assertEqual(result.coupon_code.max_uses, 1)
+        self.assertEqual(result.coupon_code.target, "gamejam")
 
     def test_minigame_submit_already_played(self):
         """Test that user can only play once"""
@@ -73,11 +74,11 @@ class MinigameAPITestCase(TestCase):
     def test_discount_calculation(self):
         """Test discount calculation ranges for various scores"""
         test_cases = [
-            (0, 0, 15, 29),  # Worst: 15-29% range
-            (100, 5, 18, 34),  # Average: 18-34% range
-            (200, 10, 20, 36),  # Good: 20-36% range
-            (150, 8, 19, 35),  # Above average: 19-35% range
-            (200, 15, 23, 37),  # Excellent: 23-37% range
+            (0, 0, 10, 10),      # Zero score: always 10%
+            (100, 5, 22, 30),    # Average: 22-30% range
+            (200, 10, 26, 35),   # Good: 26-35% range
+            (150, 8, 24, 32),    # Above average: 24-32% range
+            (200, 15, 30, 40),   # Excellent: 30-40% range
         ]
 
         for carrot, coin, min_expected, max_expected in test_cases:
