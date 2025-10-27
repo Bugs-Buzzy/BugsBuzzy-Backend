@@ -24,18 +24,16 @@ class MinigameAPITestCase(TestCase):
 
     def test_minigame_submit_valid(self):
         """Test submitting valid game results"""
-        response = self.client.post(
-            "/minigame/submit/", {"carrot_count": 100, "coin_count": 5}
-        )
+        response = self.client.post("/minigame/submit/", {"carrot_count": 100, "coin_count": 5})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data["success"])
-        
+
         # With probabilistic calculation, discount should be in reasonable range
         discount = response.data["discount_percentage"]
-        self.assertGreaterEqual(discount, 5)   # Minimum possible
-        self.assertLessEqual(discount, 40)     # Maximum possible
+        self.assertGreaterEqual(discount, 5)  # Minimum possible
+        self.assertLessEqual(discount, 40)  # Maximum possible
         self.assertGreaterEqual(discount, 18)  # For this score, should be >= 18
-        self.assertLessEqual(discount, 34)     # For this score, should be <= 34
+        self.assertLessEqual(discount, 34)  # For this score, should be <= 34
 
         # Verify result is saved
         result = MinigameResult.objects.get(user=self.user)
@@ -60,9 +58,7 @@ class MinigameAPITestCase(TestCase):
 
     def test_minigame_submit_invalid_scores(self):
         """Test anti-cheat for invalid scores"""
-        response = self.client.post(
-            "/minigame/submit/", {"carrot_count": 500, "coin_count": 30}
-        )
+        response = self.client.post("/minigame/submit/", {"carrot_count": 500, "coin_count": 30})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_minigame_status_after_playing(self):
@@ -77,11 +73,11 @@ class MinigameAPITestCase(TestCase):
     def test_discount_calculation(self):
         """Test discount calculation ranges for various scores"""
         test_cases = [
-            (0, 0, 15, 29),      # Worst: 15-29% range
-            (100, 5, 18, 34),    # Average: 18-34% range
-            (200, 10, 20, 36),   # Good: 20-36% range
-            (150, 8, 19, 35),    # Above average: 19-35% range
-            (200, 15, 23, 37),   # Excellent: 23-37% range
+            (0, 0, 15, 29),  # Worst: 15-29% range
+            (100, 5, 18, 34),  # Average: 18-34% range
+            (200, 10, 20, 36),  # Good: 20-36% range
+            (150, 8, 19, 35),  # Above average: 19-35% range
+            (200, 15, 23, 37),  # Excellent: 23-37% range
         ]
 
         for carrot, coin, min_expected, max_expected in test_cases:
@@ -94,11 +90,19 @@ class MinigameAPITestCase(TestCase):
                 client = APIClient()
                 client.force_authenticate(user=user)
 
-                response = client.post("/minigame/submit/", {"carrot_count": carrot, "coin_count": coin})
+                response = client.post(
+                    "/minigame/submit/", {"carrot_count": carrot, "coin_count": coin}
+                )
                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-                
+
                 discount = response.data["discount_percentage"]
-                self.assertGreaterEqual(discount, min_expected, 
-                    f"Discount {discount}% is less than expected minimum {min_expected}%")
-                self.assertLessEqual(discount, max_expected,
-                    f"Discount {discount}% is more than expected maximum {max_expected}%")
+                self.assertGreaterEqual(
+                    discount,
+                    min_expected,
+                    f"Discount {discount}% is less than expected minimum {min_expected}%",
+                )
+                self.assertLessEqual(
+                    discount,
+                    max_expected,
+                    f"Discount {discount}% is more than expected maximum {max_expected}%",
+                )

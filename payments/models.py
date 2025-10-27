@@ -62,26 +62,26 @@ class Transaction(models.Model):
 
 class PurchasingItem(models.Model):
     COLOR_CHOICES = [
-        ('#10b981', '🟢 Green'),
-        ('#3b82f6', '🔵 Blue'),
-        ('#f59e0b', '🟠 Orange'),
-        ('#ef4444', '🔴 Red'),
-        ('#8b5cf6', '🟣 Purple'),
-        ('#ec4899', '🩷 Pink'),
-        ('#14b8a6', '🩵 Teal'),
-        ('#6b7280', '⚫ Gray'),
+        ("#10b981", "🟢 Green"),
+        ("#3b82f6", "🔵 Blue"),
+        ("#f59e0b", "🟠 Orange"),
+        ("#ef4444", "🔴 Red"),
+        ("#8b5cf6", "🟣 Purple"),
+        ("#ec4899", "🩷 Pink"),
+        ("#14b8a6", "🩵 Teal"),
+        ("#6b7280", "⚫ Gray"),
     ]
-    
+
     name = models.CharField(null=False, blank=False, unique=True)
     description = models.CharField(null=True, blank=True)
     amount = models.IntegerField(null=False, blank=False)  # in Toman
     initial_count = models.IntegerField(null=False, blank=False)
     purchased_count = models.IntegerField(null=False, blank=False)
     color = models.CharField(
-        max_length=7, 
-        default='#6b7280',
+        max_length=7,
+        default="#6b7280",
         choices=COLOR_CHOICES,
-        help_text="Select a color for admin display"
+        help_text="Select a color for admin display",
     )
 
     @property
