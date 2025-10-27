@@ -181,6 +181,8 @@ class TeamUpdateView(APIView):
             team.name = request.data["name"]
         if "description" in request.data:
             team.description = request.data["description"]
+        if "avatar" in request.data:
+            team.avatar = request.data["avatar"]
         
         team.save()
         serializer = OnlineTeamSerializer(team, context={"request": request})

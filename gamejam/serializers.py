@@ -30,6 +30,7 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "avatar",
             "status",
             "leader",
             "invite_code",

@@ -21,6 +21,10 @@ class OnlineTeam(models.Model):
 
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True)
+    avatar = models.TextField(
+        blank=True,
+        help_text="Base64 data URI for team avatar (max 256x256)"
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="inactive")
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name="led_gamejam_teams")
     invite_code = models.CharField(max_length=10, unique=True, null=True, blank=True, editable=False)

@@ -35,6 +35,8 @@ class TransactionAdmin(admin.ModelAdmin):
     
     @admin.display(description="Amount (تومان)", ordering="amount")
     def amount_display(self, obj):
+        if obj.amount is None:
+            return format_html('<span style="color:#6b7280;">-</span>')
         amount_toman = obj.amount // 10
         formatted = f'{amount_toman:,}'
         color = '#10b981' if obj.status == 'completed' else '#f59e0b'
