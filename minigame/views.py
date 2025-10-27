@@ -18,14 +18,19 @@ def calculate_discount_percentage(carrot_count: int, coin_count: int) -> int:
     Calculate discount percentage using probabilistic distribution.
     
     Target distribution:
-    - ~70% chance: discount < 30%
-    - ~95% chance: discount <= 35%
-    - 100% chance: discount <= 40% (hard cap)
+    - Average: ~28%
+    - Excellent play: 36-37% (rarely 38-39%)
+    - Below 22%: very rare (unless poor performance)
+    - Zero score: 10%
     
     The carrot and coin counts influence the parameters of the distribution:
     - Higher scores shift the mean upward
     - But the randomness ensures variety and prevents exploitation
     """
+    # Special case: no items collected
+    if carrot_count == 0 and coin_count == 0:
+        return 10
+    
     # Normalize scores to 0-1 range
     # Max realistic: carrot=200, coin=15
     carrot_normalized = min(carrot_count / 200, 1.0)
@@ -34,25 +39,25 @@ def calculate_discount_percentage(carrot_count: int, coin_count: int) -> int:
     # Combined performance score (0-1)
     performance = (carrot_normalized * 0.4 + coin_normalized * 0.6)
     
-    # Base mean varies from 15% to 23% based on performance
-    base_mean = 15 + (performance * 8)
+    # Base mean varies from 20% to 30% based on performance
+    # This gives us average around 28% for typical play
+    base_mean = 20 + (performance * 10)
     
     # Use beta distribution for controlled randomness
-    # Alpha and beta parameters control the shape
-    # Higher performance = slightly higher variance (more chance for high rewards)
-    alpha = 3.5 + (performance * 1.0)  # 3.5-4.5 range
-    beta = 9.0 - (performance * 2.0)   # 7.0-9.0 range
+    # Slightly higher variance for better players
+    alpha = 3.0 + (performance * 1.5)  # 3.0-4.5 range
+    beta = 8.0 - (performance * 2.5)   # 5.5-8.0 range
     
     # Generate random value from beta distribution (0-1)
     random_factor = np.random.beta(alpha, beta)
     
-    # Scale to discount range with cap at 40
-    # Allows reaching up to 40% for excellent performance with luck
-    discount = base_mean + (random_factor * 17)
+    # Scale to discount range
+    # For excellent performance: base_mean=30, can add up to 10 more = 40
+    discount = base_mean + (random_factor * 10)
     
     # Apply hard cap at 40% and floor at 5%
     discount = max(5, min(40, int(discount)))
-    
+
     return discount
 
 
