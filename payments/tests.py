@@ -2,7 +2,7 @@ import csv
 import json
 from io import BytesIO
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -11,6 +11,7 @@ from accounts.models import User
 from .models import Transaction, PurchasingItem
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class AdminExportTests(TestCase):
 	@classmethod
 	def setUpTestData(cls):
