@@ -310,8 +310,7 @@ class CustomUserAdmin(UserAdmin):
     class AnnouncementCreateForm(forms.Form):
         title = forms.CharField(max_length=255)
         description = forms.CharField(widget=forms.Textarea, required=False)
-    # always send email; no subject override
-
+    
     def create_announcement_view(self, request):
         ids = request.GET.get('ids', '')
         user_ids = [int(x) for x in ids.split(',') if x.strip().isdigit()]
@@ -335,10 +334,10 @@ class CustomUserAdmin(UserAdmin):
                 from django.template.loader import render_to_string
                 from django.core.mail import send_mail
                 from django.conf import settings
-                html_body = render_to_string('emails/announcement_email.html', {'announcement': ann})
                 for u in users:
                     try:
                         if u.email:
+                            html_body = render_to_string('emails/announcement_email.html', {'announcement': ann, 'user_name': u.first_name + ' ' + u.last_name})
                             send_mail(subject=subject, message=description or '', html_message=html_body, from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[u.email], fail_silently=False)
                     except Exception:
                         continue

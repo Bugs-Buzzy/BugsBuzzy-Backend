@@ -1,13 +1,108 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>اطلاعیه - باگزبازی</title>
-  </head>
-  <body>
-    <h1>اطلاعیه</h1>
-    <h4>{{ announcement.title }}</h4>
-    <p>{{ announcement.description }}</p>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ announcement.title }} - باگزبازی</title>
+</head>
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #FFF8E1, #d8f5ff); font-family: Calibri, Tahoma, Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="min-height: 100vh;">
+        <tr>
+            <td align="center" style="padding: 20px 10px;">
+                <table class="container" cellpadding="0" cellspacing="0" style="
+                    max-width: 600px;
+                    background: #FFFFFF;
+                    border-radius: 12px;
+                    border: 3px solid #FFD580;
+                    box-shadow: 0 6px 25px rgba(255, 183, 77, 0.25);
+                    overflow: hidden;
+                ">
+                    <tr>
+                        <td align="center" style="padding: 18px 15px; background:linear-gradient(135deg, #fef8e7, #e3f3fb); border-bottom: 3px solid #FFD580;">
+                            <img class="logo" src="https://s34.picofile.com/file/8487595426/LOGO.png" alt="Logo" width="80" style="display: block; margin: 0 auto 8px;">
+                            <h1 class="header-title" style="margin: 0; color: #005C8A; font-size: 28px; font-weight: bold;">
+                                باگزبازی
+                            </h1>
+                            <p class="header-subtitle" style="margin: 3px 0 0; color: #007CA8; font-size: 13px;">
+                                رویداد بازی‌سازی دانشگاه صنعتی شریف
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 30px 25px; background: #FAFCFF; text-align: right;">
+                            <h2 class="announcement-title" style="color: #005C8A; font-size: 22px; margin: 0 0 15px; text-align: right; font-weight: bold;">
+                                {{ announcement.title }}
+                            </h2>
+                            <p style="color: #333; font-size: 16px; line-height: 1.7; text-align: right; margin: 0 0 10px;">
+                                سلام {{ user_name }}،
+                            </p>
+                            
+                            <div class="announcement-body" style="color: #555; font-size: 15px; line-height: 1.7; text-align: right; margin: 0 0 25px;">
+                                {{ announcement.description }}
+                                <br><br>
+                                <p style="margin: 10px 0 0;">
+                                    با آرزوی موفقیت،<br>
+                                    تیم برگزاری باگزبازی
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 12px; background: linear-gradient(to top, #E1F5FE, #FFF8E1); text-align: center; border-top: 2px solid #FFD580;">
+                            <div style="text-align: center;">
+                                <a href="https://bugsbuzzy.ir/" style="
+                                    display: inline-block;
+                                    margin: 4px 4px;
+                                    padding: 8px 14px;
+                                    color: #004D61;
+                                    text-decoration: none;
+                                    font-size: 11px;
+                                    font-weight: bold;
+                                    background: rgba(255,213,128,0.3);
+                                    border: 2px solid #FFB84D;
+                                    border-radius: 5px;
+                                ">🌐 سایت</a>
+                                <a href="https://t.me/bugsbuzzy" style="
+                                    display: inline-block;
+                                    margin: 4px 4px;
+                                    padding: 8px 14px;
+                                    color: #004D61;
+                                    text-decoration: none;
+                                    font-size: 11px;
+                                    font-weight: bold;
+                                    background: rgba(179,229,255,0.3);
+                                    border: 2px solid #80D8FF;
+                                    border-radius: 5px;
+                                ">📢 کانال تلگرام</a>
+                                <a href="https://t.me/BugsBuzzy_Support" style="
+                                    display: inline-block;
+                                    margin: 4px 4px;
+                                    padding: 8px 14px;
+                                    color: #004D61;
+                                    text-decoration: none;
+                                    font-size: 11px;
+                                    font-weight: bold;
+                                    background: rgba(179,229,255,0.3);
+                                    border: 2px solid #80D8FF;
+                                    border-radius: 5px;
+                                ">💬 پشتیبانی</a>
+                            </div>
+                            <img src="https://s34.picofile.com/file/8487595250/banner.png" alt="Sponsors" style="
+                                max-width: 55%;
+                                height: auto;
+                                margin-top: 12px;
+                            ">
+                        </td>
+                    </tr>
+                </table>
+
+                <p class="footer-text" style="color: rgba(80, 80, 80, 0.7); font-size: 9px; text-align: center; margin: 10px 0 0;">
+                    این ایمیل به صورت خودکار ارسال شده است
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
 </html>
