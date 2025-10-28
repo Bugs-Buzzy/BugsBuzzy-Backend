@@ -1,10 +1,16 @@
 from django.contrib import admin
-from django.db.models import Q, Count, Sum
+from django.db.models import Sum
+from django.urls import path
 from django.utils.html import format_html
 from django import forms
 import json
 from .models import Transaction, DiscountCode, PurchasingItem
 from .models_proxy import UserPurchasesSummary
+from .admin_exports import (
+    export_transactions_csv,
+    export_transactions_excel,
+    export_purchasing_items_excel,
+)
 
 
 @admin.register(Transaction)
@@ -38,6 +44,31 @@ class TransactionAdmin(admin.ModelAdmin):
         "amount_display",
     )
     ordering = ("-created_at",)
+    change_list_template = "admin/payments/transaction/change_list.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "export/csv/",
+                self.admin_site.admin_view(self.export_transactions_csv_view),
+                name="payments_transaction_export_csv",
+            ),
+            path(
+                "export/excel/",
+                self.admin_site.admin_view(self.export_transactions_excel_view),
+                name="payments_transaction_export_excel",
+            ),
+        ]
+        return custom_urls + urls
+
+    def export_transactions_csv_view(self, request):
+        queryset = self.get_queryset(request).select_related("user", "discount")
+        return export_transactions_csv(queryset)
+
+    def export_transactions_excel_view(self, request):
+        queryset = self.get_queryset(request).select_related("user", "discount")
+        return export_transactions_excel(queryset)
 
     @admin.display(description="Amount (تومان)", ordering="amount")
     def amount_display(self, obj):
@@ -177,6 +208,20 @@ class PurchasingItemAdmin(admin.ModelAdmin):
 
     class Media:
         css = {"all": ("admin/css/color_picker.css",)}
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "export/buyers/",
+                self.admin_site.admin_view(self.export_buyers_excel_view),
+                name="payments_purchasingitem_export_buyers_excel",
+            )
+        ]
+        return custom_urls + urls
+
+    def export_buyers_excel_view(self, request):
+        return export_purchasing_items_excel()
 
     @admin.display(description="Color")
     def color_preview(self, obj):
