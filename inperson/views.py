@@ -271,11 +271,25 @@ class SubmissionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        phase = request.data.get("phase")
+        raw_phase = request.data.get("phase")
         content = request.data.get("content", "").strip()
 
-        if phase is None:
+        if raw_phase is None:
             return Response({"error": "Phase is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            phase = int(raw_phase)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Phase must be a number"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        allowed_phases = {0, 2, 4}
+        if phase not in allowed_phases:
+            return Response(
+                {"error": "Submissions are only allowed for phases 0, 2, and 4"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not content:
             return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -295,6 +309,7 @@ class SubmissionCreateView(APIView):
             phase=phase,
             defaults={
                 "content": content,
+                "submitted_by": request.user,
             },
         )
 

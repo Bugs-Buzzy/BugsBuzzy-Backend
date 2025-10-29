@@ -201,20 +201,21 @@ class InPersonSubmission(models.Model):
 
     PHASE_CHOICES = [
         (0, "Phase 0: Introduction"),
-        (1, "Phase 1: Ideation"),
         (2, "Phase 2: Development"),
         (3, "Phase 3: Polish"),
         (4, "Phase 4: Final Battle"),
     ]
 
     team = models.ForeignKey(InPersonTeam, on_delete=models.CASCADE, related_name="submissions")
+    submitted_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="inperson_submissions",
+    )
     phase = models.IntegerField(choices=PHASE_CHOICES)
-
-    # Content
-    title = models.CharField(max_length=200, blank=True)
-    description = models.TextField(blank=True)
-    file = models.FileField(upload_to="inperson/submissions/", null=True, blank=True)
-    game_url = models.URLField(blank=True)
+    content = models.TextField()
 
     # Judging
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)

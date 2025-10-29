@@ -304,15 +304,24 @@ class InPersonMemberAdmin(admin.ModelAdmin):
 
 @admin.register(InPersonSubmission)
 class InPersonSubmissionAdmin(admin.ModelAdmin):
-    list_display = ("team", "phase_display", "score_display", "submitted_at")
-    list_filter = ("phase", "submitted_at")
+    list_display = ("team", "submitted_by", "phase_display", "score_display", "submitted_at")
+    list_filter = ("phase", "submitted_at", "submitted_by")
     search_fields = ("team__name", "content")
-    readonly_fields = ("submitted_at", "updated_at", "content_preview")
+    readonly_fields = ("submitted_at", "updated_at", "content_preview", "submitted_by")
 
     fieldsets = (
         (
             "Submission Info",
-            {"fields": ("team", "phase", "content_preview", "submitted_at", "updated_at")},
+            {
+                "fields": (
+                    "team",
+                    "submitted_by",
+                    "phase",
+                    "content_preview",
+                    "submitted_at",
+                    "updated_at",
+                )
+            },
         ),
         ("Judging", {"fields": ("score", "judge_notes")}),
     )
@@ -321,9 +330,7 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
     def phase_display(self, obj):
         phases = {
             0: "🎯 Phase 0",
-            1: "💡 Phase 1",
             2: "🛠️ Phase 2",
-            3: "🎨 Phase 3",
             4: "🏆 Phase 4",
         }
         return phases.get(obj.phase, f"Phase {obj.phase}")
