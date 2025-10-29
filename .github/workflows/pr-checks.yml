@@ -20,8 +20,8 @@ jobs:
 
       - name: Install PDM
         run: |
-          pip install pdm
-          echo "PDM installed successfully"
+          pip install pdm hishel
+          echo "PDM and hishel installed successfully"
 
       - name: Install dependencies
         run: |
@@ -72,8 +72,8 @@ jobs:
 
       - name: Install PDM
         run: |
-          pip install pdm
-          echo "PDM installed successfully"
+          pip install pdm hishel
+          echo "PDM and hishel installed successfully"
 
       - name: Install dependencies
         run: pdm install --dev
