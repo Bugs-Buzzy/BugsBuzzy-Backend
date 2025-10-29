@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
@@ -7,9 +7,111 @@ from .models import User
 from django import forms
 from django.shortcuts import render, redirect
 from django.urls import path
+from django.db.models import Q
 
 # announcement models
 from announcement.models import Announcement, UserAnnouncement
+from payments.models import PurchasingItem, Transaction
+
+
+class UserInPersonMembership(admin.SimpleListFilter):
+    title = "user in-person team membership"
+    parameter_name = "in_person_membership"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("no-team", "no-team"),
+            ("member", "member"),
+            ("leader", "leader"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "no-team":
+            return queryset.filter(led_inperson_teams__isnull=True, inperson_memberships__isnull=True).distinct()
+        if self.value() == "member":
+            return queryset.filter(inperson_memberships__isnull=False).exclude(led_inperson_teams__isnull=False).distinct()
+        if self.value() == "leader":
+            return queryset.filter(led_inperson_teams__isnull=False).distinct()
+    
+    
+class UserOnlineMembership(admin.SimpleListFilter):
+    title = "user online team membership"
+    parameter_name = "online_membership"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("no-team", "no-team"),
+            ("member", "member"),
+            ("leader", "leader"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "no-team":
+            return queryset.filter(led_gamejam_teams__isnull=True, gamejam_memberships__isnull=True).distinct()
+        if self.value() == "member":
+            return queryset.filter(gamejam_memberships__isnull=False).exclude(led_gamejam_teams__isnull=False).distinct()
+        if self.value() == "leader":
+            return queryset.filter(led_gamejam_teams__isnull=False).distinct()
+    
+    
+class UserInPersonTeamStatus(admin.SimpleListFilter):
+    title = "user in-person team status"
+    parameter_name = "in_person_team_status"
+    CHOICES = [
+        ("incomplete", "Incomplete"),
+        ("active", "Active"),
+        ("attended", "Attended"),
+        ("disbanded", "Disbanded"),
+    ]
+
+    def lookups(self, request, model_admin):
+        return self.CHOICES
+
+    def queryset(self, request, queryset):
+        for choice in self.CHOICES:
+            if choice[0] == self.value():
+                return queryset.filter(
+                    Q(led_inperson_teams__status=choice[0]) |
+                    Q(inperson_memberships__team__status=choice[0])
+                ).distinct()
+                
+                
+class UserOnlineTeamStatus(admin.SimpleListFilter):
+    title = "user online team status"
+    parameter_name = "online_team_status"
+    CHOICES = [
+        ("inactive", "Inactive"),
+        ("active", "Active"),
+        ("completed", "Completed"),
+        ("attended", "Attended"),
+    ]
+
+    def lookups(self, request, model_admin):
+        return self.CHOICES
+
+    def queryset(self, request, queryset):
+        for choice in self.CHOICES:
+            if choice[0] == self.value():
+                return queryset.filter(
+                    Q(led_gamejam_teams__status=choice[0]) |
+                    Q(gamejam_memberships__team__status=choice[0])
+                ).distinct()
+                
+                
+class PurchasingItemListFilter(admin.SimpleListFilter):
+    title = 'purchasing item'
+    parameter_name = 'purchasing_item'
+
+    def lookups(self, request, model_admin):
+        items = PurchasingItem.objects.order_by('name')
+        return [(i.name, i.name) for i in items]
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if not val:
+            return queryset
+        user_ids = Transaction.objects.filter(items__icontains=val).values_list('user_id', flat=True)
+        return queryset.filter(id__in=user_ids)
 
 
 class CustomUserAdmin(UserAdmin):
@@ -41,6 +143,11 @@ class CustomUserAdmin(UserAdmin):
         "city",
         "created_at",
         "email_verified_at",
+        UserInPersonMembership,
+        UserOnlineMembership,
+        UserInPersonTeamStatus,
+        UserOnlineTeamStatus,
+        PurchasingItemListFilter
     )
     search_fields = (
         "email",
@@ -179,7 +286,6 @@ class CustomUserAdmin(UserAdmin):
         if "birth_date" in form.base_fields:
             form.base_fields["birth_date"].required = False
         return form
-
     # Admin action: create announcement for selected users
     actions = ['create_announcement_for_selected']
 
@@ -204,8 +310,7 @@ class CustomUserAdmin(UserAdmin):
     class AnnouncementCreateForm(forms.Form):
         title = forms.CharField(max_length=255)
         description = forms.CharField(widget=forms.Textarea, required=False)
-    # always send email; no subject override
-
+    
     def create_announcement_view(self, request):
         ids = request.GET.get('ids', '')
         user_ids = [int(x) for x in ids.split(',') if x.strip().isdigit()]
@@ -229,10 +334,10 @@ class CustomUserAdmin(UserAdmin):
                 from django.template.loader import render_to_string
                 from django.core.mail import send_mail
                 from django.conf import settings
-                html_body = render_to_string('emails/announcement_email.html', {'announcement': ann})
                 for u in users:
                     try:
                         if u.email:
+                            html_body = render_to_string('emails/announcement_email.html', {'announcement': ann, 'user_name': u.first_name + ' ' + u.last_name})
                             send_mail(subject=subject, message=description or '', html_message=html_body, from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[u.email], fail_silently=False)
                     except Exception:
                         continue
