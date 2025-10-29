@@ -332,6 +332,7 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
         phases = {
             0: "🎯 Phase 0",
             2: "🛠️ Phase 2",
+            3: "✨ Phase 3",
             4: "🏆 Phase 4",
         }
         return phases.get(obj.phase, f"Phase {obj.phase}")
