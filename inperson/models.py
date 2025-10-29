@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 import random
 import string
 
@@ -216,6 +217,8 @@ class InPersonSubmission(models.Model):
     )
     phase = models.IntegerField(choices=PHASE_CHOICES)
     content = models.TextField()
+    # Historical submissions are kept. One submission per (team, phase) may be marked final.
+    is_final = models.BooleanField(default=False)
 
     # Judging
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -225,8 +228,16 @@ class InPersonSubmission(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [["team", "phase"]]
-        ordering = ["team", "phase"]
+        # Allow many submissions per team+phase, but ensure at most one final submission
+        # is marked per (team, phase).
+        ordering = ["team", "phase", "-submitted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "phase"],
+                condition=Q(is_final=True),
+                name="unique_final_per_team_phase",
+            )
+        ]
         verbose_name = "In-Person Submission"
         verbose_name_plural = "In-Person Submissions"
 

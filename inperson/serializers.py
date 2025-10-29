@@ -57,6 +57,7 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
 class InPersonSubmissionSerializer(serializers.ModelSerializer):
     team = InPersonTeamSerializer(read_only=True)
     submitted_by = UserSerializer(read_only=True)
+    is_final = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = InPersonSubmission
@@ -65,13 +66,14 @@ class InPersonSubmissionSerializer(serializers.ModelSerializer):
             "team",
             "submitted_by",
             "phase",
+            "is_final",
             "content",
             "score",
             "judge_notes",
             "submitted_at",
             "updated_at",
         ]
-        read_only_fields = ["submitted_at", "updated_at", "score", "judge_notes", "submitted_by", "team"]
+    read_only_fields = ["submitted_at", "updated_at", "score", "judge_notes", "submitted_by", "team", "is_final"]
 
 
 class InPersonCompetitionSerializer(serializers.ModelSerializer):

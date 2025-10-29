@@ -304,8 +304,8 @@ class InPersonMemberAdmin(admin.ModelAdmin):
 
 @admin.register(InPersonSubmission)
 class InPersonSubmissionAdmin(admin.ModelAdmin):
-    list_display = ("team", "submitted_by", "phase_display", "score_display", "submitted_at")
-    list_filter = ("phase", "submitted_at", "submitted_by")
+    list_display = ("team", "submitted_by", "phase_display", "is_final_display", "score_display", "submitted_at")
+    list_filter = ("phase", "submitted_at", "submitted_by", "is_final")
     search_fields = ("team__name", "content")
     readonly_fields = ("submitted_at", "updated_at", "content_preview", "submitted_by")
 
@@ -316,6 +316,7 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
                 "fields": (
                     "team",
                     "submitted_by",
+                    "is_final",
                     "phase",
                     "content_preview",
                     "submitted_at",
@@ -352,3 +353,20 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
                 '<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview
             )
         return "-"
+
+    @admin.display(description="Final")
+    def is_final_display(self, obj):
+        return format_html(
+            '<span style="font-weight:bold;color:{}">{}</span>',
+            '#10b981' if obj.is_final else '#6b7280',
+            'YES' if obj.is_final else 'no',
+        )
+
+    @admin.action(description="Mark selected submission(s) as Final")
+    def mark_as_final(self, request, queryset):
+        # Only one final per team+phase - so mark others false first per item
+        for submission in queryset:
+            InPersonSubmission.objects.filter(team=submission.team, phase=submission.phase, is_final=True).update(is_final=False)
+            submission.is_final = True
+            submission.save(update_fields=["is_final"])
+        self.message_user(request, f"Marked {queryset.count()} submission(s) as final.")

@@ -303,24 +303,25 @@ class SubmissionCreateView(APIView):
                 {"error": f"Phase {phase} is not active yet"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Create or update submission
-        submission, created = InPersonSubmission.objects.update_or_create(
-            team=team,
-            phase=phase,
-            defaults={
-                "content": content,
-                "submitted_by": request.user,
-            },
-        )
+        # Create a new submission and mark it as the final one for this team+phase.
+        with db_transaction.atomic():
+            # Mark previous submissions (if any) as not final
+            InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(is_final=False)
 
-        # Mark team as attended after first submission
-        if created and team.status == "active":
-            team.mark_attended()
+            submission = InPersonSubmission.objects.create(
+                team=team,
+                phase=phase,
+                content=content,
+                submitted_by=request.user,
+                is_final=True,
+            )
+
+            # Mark team as attended after first submission
+            if team.status == "active":
+                team.mark_attended()
 
         serializer = InPersonSubmissionSerializer(submission)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SubmissionListView(APIView):
