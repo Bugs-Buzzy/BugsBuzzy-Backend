@@ -247,6 +247,7 @@ else:
 
 
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@bugsbuzzy.com")
+ANNOUNCEMENT_FROM_EMAIL = os.environ.get("ANNOUNCEMENT_FROM_EMAIL", "info@bugsbuzzy.com")
 EMAIL_TIMEOUT = 30  # 30 seconds timeout
 
 

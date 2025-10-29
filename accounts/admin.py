@@ -322,7 +322,7 @@ class CustomUserAdmin(UserAdmin):
                 title = form.cleaned_data['title']
                 description = form.cleaned_data.get('description')
                 # always send and use default subject
-                subject = f"Announcement: {title}"
+                subject = f"اطلاعیه: {title}"
 
                 ann = Announcement.objects.create(title=title, description=description)
                 created = 0
@@ -338,7 +338,7 @@ class CustomUserAdmin(UserAdmin):
                     try:
                         if u.email:
                             html_body = render_to_string('emails/announcement_email.html', {'announcement': ann, 'user_name': u.first_name + ' ' + u.last_name})
-                            send_mail(subject=subject, message=description or '', html_message=html_body, from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[u.email], fail_silently=False)
+                            send_mail(subject=subject, message=description or '', html_message=html_body, from_email=settings.ANNOUNCEMENT_FROM_EMAIL, recipient_list=[u.email], fail_silently=False)
                     except Exception:
                         continue
 

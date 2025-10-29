@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ announcement.title }} - باگزبازی</title>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #FFF8E1, #d8f5ff); font-family: Calibri, Tahoma, Arial, sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="min-height: 100vh;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #FFF8E1, #d8f5ff); font-family: Calibri, Tahoma, Arial, sans-serif; direction: rtl; unicode-bidi: embed;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="min-height: 100vh; direction: rtl;">
         <tr>
             <td align="center" style="padding: 20px 10px;">
-                <table class="container" cellpadding="0" cellspacing="0" style="
+                <table class="container" cellpadding="0" cellspacing="0" dir="rtl" style="
                     max-width: 600px;
                     background: #FFFFFF;
                     border-radius: 12px;
                     border: 3px solid #FFD580;
                     box-shadow: 0 6px 25px rgba(255, 183, 77, 0.25);
                     overflow: hidden;
+                    direction: rtl;
                 ">
                     <tr>
                         <td align="center" style="padding: 18px 15px; background:linear-gradient(135deg, #fef8e7, #e3f3fb); border-bottom: 3px solid #FFD580;">
@@ -30,7 +31,7 @@
                     </tr>
 
                     <tr>
-                        <td style="padding: 30px 25px; background: #FAFCFF; text-align: right;">
+                        <td style="padding: 30px 25px; background: #FAFCFF; text-align: right; direction: rtl;">
                             <h2 class="announcement-title" style="color: #005C8A; font-size: 22px; margin: 0 0 15px; text-align: right; font-weight: bold;">
                                 {{ announcement.title }}
                             </h2>
@@ -38,7 +39,7 @@
                                 سلام {{ user_name }}،
                             </p>
                             
-                            <div class="announcement-body" style="color: #555; font-size: 15px; line-height: 1.7; text-align: right; margin: 0 0 25px;">
+                            <div class="announcement-body" style="color: #555; font-size: 15px; line-height: 1.7; text-align: right; margin: 0 0 25px; direction: rtl; unicode-bidi: plaintext;">
                                 {{ announcement.description }}
                                 <br><br>
                                 <p style="margin: 10px 0 0;">
