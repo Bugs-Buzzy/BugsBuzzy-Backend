@@ -153,6 +153,7 @@ class TeamSizeFilter(admin.SimpleListFilter):
 @admin.register(InPersonTeam)
 class InPersonTeamAdmin(admin.ModelAdmin):
     list_display = (
+        "team_number",
         "name",
         "leader_info",
         "status_display",
@@ -164,6 +165,7 @@ class InPersonTeamAdmin(admin.ModelAdmin):
     list_filter = ("status", TeamSizeFilter, "created_at")
     search_fields = (
         "name",
+        "team_number",
         "leader__email",
         "leader__first_name",
         "leader__last_name",
@@ -175,7 +177,7 @@ class InPersonTeamAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
 
     fieldsets = (
-        ("Basic Info", {"fields": ("name", "description", "leader", "status")}),
+        ("Basic Info", {"fields": ("name", "team_number", "description", "leader", "status")}),
         (
             "Team Details",
             {"fields": ("invite_code", "member_count_display", "created_at", "updated_at")},
