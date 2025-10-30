@@ -110,7 +110,7 @@ class PurchasingItemListFilter(admin.SimpleListFilter):
         val = self.value()
         if not val:
             return queryset
-        user_ids = Transaction.objects.filter(items__icontains=val).values_list('user_id', flat=True)
+        user_ids = Transaction.objects.filter(items__icontains=val, status='Completed').values_list('user_id', flat=True)
         return queryset.filter(id__in=user_ids)
 
 

@@ -18,10 +18,17 @@ on:
   push:
     branches: [ main ]
     paths:
+      - 'core/**'
       - 'accounts/**'
       - 'payments/**'
-      - 'jams/**'
-      - 'core/**'
+      - 'inperson/**'
+      - 'gamejam/**'
+      - 'announcement/**'
+      - 'minigame/**'
+      - 'miniphase/**'
+      - 'workshops/**'
+      - 'leaderboard_inperson/**'
+      - 'leaderboard_gamejam/**'
       - 'Dockerfile'
       - '.github/workflows/deploy-production.yml'
       - 'pyproject.toml'
