@@ -46,7 +46,7 @@ class TransactionAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     change_list_template = "admin/payments/transaction/change_list.html"
     actions = ["mark_as_refunded"]
-    
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -108,6 +108,7 @@ class TransactionAdmin(admin.ModelAdmin):
         self.message_user(
             request, f"{updated_count} transaction(s) were successfully marked as Refunded."
         )
+
 
 class DiscountCodeAdminForm(forms.ModelForm):
     target_items = forms.MultipleChoiceField(

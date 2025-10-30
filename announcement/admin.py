@@ -39,14 +39,13 @@ class UserAnnouncementAdmin(admin.ModelAdmin):
     readonly_fields = ("announcement", "user", "created_at")
 
 
-
 class AnnouncementListFilter(admin.SimpleListFilter):
-    title = 'announcement'
-    parameter_name = 'announcement'
+    title = "announcement"
+    parameter_name = "announcement"
 
     def lookups(self, request, model_admin):
         # show the most recent 20 announcements
-        items = Announcement.objects.order_by('-created_at')[:20]
+        items = Announcement.objects.order_by("-created_at")[:20]
         return [(str(i.id), i.title[:50]) for i in items]
 
     def queryset(self, request, queryset):
@@ -56,4 +55,4 @@ class AnnouncementListFilter(admin.SimpleListFilter):
         return queryset
 
 
-UserAnnouncementAdmin.list_filter = ('created_at', AnnouncementListFilter)
+UserAnnouncementAdmin.list_filter = ("created_at", AnnouncementListFilter)

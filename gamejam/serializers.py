@@ -46,16 +46,18 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
 
 class OnlineSubmissionSerializer(serializers.ModelSerializer):
     team = OnlineTeamSerializer(read_only=True)
+    submitted_by = UserSerializer(read_only=True)
+    is_final = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = OnlineSubmission
         fields = [
             "id",
             "team",
-            "title",
-            "description",
-            "file",
-            "game_url",
+            "submitted_by",
+            "phase",
+            "is_final",
+            "content",
             "score",
             "judge_notes",
             "submitted_at",

@@ -27,13 +27,19 @@ class UserInPersonMembership(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "no-team":
-            return queryset.filter(led_inperson_teams__isnull=True, inperson_memberships__isnull=True).distinct()
+            return queryset.filter(
+                led_inperson_teams__isnull=True, inperson_memberships__isnull=True
+            ).distinct()
         if self.value() == "member":
-            return queryset.filter(inperson_memberships__isnull=False).exclude(led_inperson_teams__isnull=False).distinct()
+            return (
+                queryset.filter(inperson_memberships__isnull=False)
+                .exclude(led_inperson_teams__isnull=False)
+                .distinct()
+            )
         if self.value() == "leader":
             return queryset.filter(led_inperson_teams__isnull=False).distinct()
-    
-    
+
+
 class UserOnlineMembership(admin.SimpleListFilter):
     title = "user online team membership"
     parameter_name = "online_membership"
@@ -47,13 +53,19 @@ class UserOnlineMembership(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "no-team":
-            return queryset.filter(led_gamejam_teams__isnull=True, gamejam_memberships__isnull=True).distinct()
+            return queryset.filter(
+                led_gamejam_teams__isnull=True, gamejam_memberships__isnull=True
+            ).distinct()
         if self.value() == "member":
-            return queryset.filter(gamejam_memberships__isnull=False).exclude(led_gamejam_teams__isnull=False).distinct()
+            return (
+                queryset.filter(gamejam_memberships__isnull=False)
+                .exclude(led_gamejam_teams__isnull=False)
+                .distinct()
+            )
         if self.value() == "leader":
             return queryset.filter(led_gamejam_teams__isnull=False).distinct()
-    
-    
+
+
 class UserInPersonTeamStatus(admin.SimpleListFilter):
     title = "user in-person team status"
     parameter_name = "in_person_team_status"
@@ -71,11 +83,11 @@ class UserInPersonTeamStatus(admin.SimpleListFilter):
         for choice in self.CHOICES:
             if choice[0] == self.value():
                 return queryset.filter(
-                    Q(led_inperson_teams__status=choice[0]) |
-                    Q(inperson_memberships__team__status=choice[0])
+                    Q(led_inperson_teams__status=choice[0])
+                    | Q(inperson_memberships__team__status=choice[0])
                 ).distinct()
-                
-                
+
+
 class UserOnlineTeamStatus(admin.SimpleListFilter):
     title = "user online team status"
     parameter_name = "online_team_status"
@@ -93,24 +105,26 @@ class UserOnlineTeamStatus(admin.SimpleListFilter):
         for choice in self.CHOICES:
             if choice[0] == self.value():
                 return queryset.filter(
-                    Q(led_gamejam_teams__status=choice[0]) |
-                    Q(gamejam_memberships__team__status=choice[0])
+                    Q(led_gamejam_teams__status=choice[0])
+                    | Q(gamejam_memberships__team__status=choice[0])
                 ).distinct()
-                
-                
+
+
 class PurchasingItemListFilter(admin.SimpleListFilter):
-    title = 'purchasing item'
-    parameter_name = 'purchasing_item'
+    title = "purchasing item"
+    parameter_name = "purchasing_item"
 
     def lookups(self, request, model_admin):
-        items = PurchasingItem.objects.order_by('name')
+        items = PurchasingItem.objects.order_by("name")
         return [(i.name, i.name) for i in items]
 
     def queryset(self, request, queryset):
         val = self.value()
         if not val:
             return queryset
-        user_ids = Transaction.objects.filter(items__icontains=val).values_list('user_id', flat=True)
+        user_ids = Transaction.objects.filter(items__icontains=val, status="Completed").values_list(
+            "user_id", flat=True
+        )
         return queryset.filter(id__in=user_ids)
 
 
@@ -147,7 +161,7 @@ class CustomUserAdmin(UserAdmin):
         UserOnlineMembership,
         UserInPersonTeamStatus,
         UserOnlineTeamStatus,
-        PurchasingItemListFilter
+        PurchasingItemListFilter,
     )
     search_fields = (
         "email",
@@ -286,12 +300,13 @@ class CustomUserAdmin(UserAdmin):
         if "birth_date" in form.base_fields:
             form.base_fields["birth_date"].required = False
         return form
+
     # Admin action: create announcement for selected users
-    actions = ['create_announcement_for_selected']
+    actions = ["create_announcement_for_selected"]
 
     def create_announcement_for_selected(self, request, queryset):
         """Redirect to a custom admin view to enter announcement details for the selected users."""
-        selected = request.POST.getlist('_selected_action')
+        selected = request.POST.getlist("_selected_action")
         if not selected:
             self.message_user(request, "No users selected.", level=messages.WARNING)
             return
@@ -303,24 +318,28 @@ class CustomUserAdmin(UserAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom = [
-            path('create_announcement/', self.admin_site.admin_view(self.create_announcement_view), name='create-announcement'),
+            path(
+                "create_announcement/",
+                self.admin_site.admin_view(self.create_announcement_view),
+                name="create-announcement",
+            ),
         ]
         return custom + urls
 
     class AnnouncementCreateForm(forms.Form):
         title = forms.CharField(max_length=255)
         description = forms.CharField(widget=forms.Textarea, required=False)
-    
+
     def create_announcement_view(self, request):
-        ids = request.GET.get('ids', '')
-        user_ids = [int(x) for x in ids.split(',') if x.strip().isdigit()]
+        ids = request.GET.get("ids", "")
+        user_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
         users = User.objects.filter(id__in=user_ids)
 
-        if request.method == 'POST':
+        if request.method == "POST":
             form = self.AnnouncementCreateForm(request.POST)
             if form.is_valid():
-                title = form.cleaned_data['title']
-                description = form.cleaned_data.get('description')
+                title = form.cleaned_data["title"]
+                description = form.cleaned_data.get("description")
                 # always send and use default subject
                 subject = f"اطلاعیه: {title}"
 
@@ -334,25 +353,41 @@ class CustomUserAdmin(UserAdmin):
                 from django.template.loader import render_to_string
                 from django.core.mail import send_mail
                 from django.conf import settings
+
                 for u in users:
                     try:
                         if u.email:
-                            html_body = render_to_string('emails/announcement_email.html', {'announcement': ann, 'user_name': u.first_name + ' ' + u.last_name})
-                            send_mail(subject=subject, message=description or '', html_message=html_body, from_email=settings.ANNOUNCEMENT_FROM_EMAIL, recipient_list=[u.email], fail_silently=False)
+                            html_body = render_to_string(
+                                "emails/announcement_email.html",
+                                {
+                                    "announcement": ann,
+                                    "user_name": u.first_name + " " + u.last_name,
+                                },
+                            )
+                            send_mail(
+                                subject=subject,
+                                message=description or "",
+                                html_message=html_body,
+                                from_email=settings.ANNOUNCEMENT_FROM_EMAIL,
+                                recipient_list=[u.email],
+                                fail_silently=False,
+                            )
                     except Exception:
                         continue
 
                 self.message_user(request, f"Created announcement and linked to {created} users.")
-                return redirect('..')
+                return redirect("..")
         else:
             form = self.AnnouncementCreateForm()
 
         context = dict(self.admin_site.each_context(request))
-        context.update({
-            'form': form,
-            'users_count': users.count(),
-        })
-        return render(request, 'admin/announcement/create_from_users.html', context)
+        context.update(
+            {
+                "form": form,
+                "users_count": users.count(),
+            }
+        )
+        return render(request, "admin/announcement/create_from_users.html", context)
 
 
 admin.site.register(User, CustomUserAdmin)

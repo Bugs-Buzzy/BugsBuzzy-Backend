@@ -66,7 +66,6 @@ def _flatten_items(transaction: Transaction) -> str:
         return transaction.items or ""
 
 
-
 def _format_datetime(value):
     if not value:
         return ""
@@ -267,7 +266,7 @@ def export_purchasing_items_excel() -> HttpResponse:
 
 
 def _sanitize_sheet_name(name: str) -> str:
-    invalid_chars = set('[]:*?/\\')
+    invalid_chars = set("[]:*?/\\")
     cleaned = "".join(char for char in name if char not in invalid_chars)
     cleaned = cleaned.strip() or "Item"
     if len(cleaned) > 31:

@@ -43,6 +43,27 @@ class SubmissionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        raw_phase = request.data.get("phase")
+        content = request.data.get("content", "").strip()
+
+        if raw_phase is None:
+            return Response({"error": "Phase is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            phase = int(raw_phase)
+        except (TypeError, ValueError):
+            return Response({"error": "Phase must be a number"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # For online competition, we only have phase 0 (single phase)
+        if phase != 0:
+            return Response(
+                {"error": "Only phase 0 is allowed for online competition"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not content:
+            return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         comp = OnlineCompetition.get_solo()
         if not comp.phase_active:
             return Response(
@@ -50,29 +71,27 @@ class SubmissionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        title = request.data.get("title", "")
-        description = request.data.get("description", "")
-        game_url = request.data.get("game_url", "")
-        file = request.FILES.get("file")
+        # Create a new submission and mark it as the final one for this team+phase.
+        with db_transaction.atomic():
+            # Mark previous submissions (if any) as not final
+            OnlineSubmission.objects.filter(team=team, phase=phase, is_final=True).update(
+                is_final=False
+            )
 
-        submission, created = OnlineSubmission.objects.update_or_create(
-            team=team,
-            defaults={
-                "title": title,
-                "description": description,
-                "game_url": game_url,
-                "file": file,
-            },
-        )
+            submission = OnlineSubmission.objects.create(
+                team=team,
+                phase=phase,
+                content=content,
+                submitted_by=request.user,
+                is_final=True,
+            )
 
-        # Mark team as attended after first submission
-        if created and team.status == "completed":
-            team.mark_attended()
+            # Mark team as attended after first submission
+            if team.status == "completed":
+                team.mark_attended()
 
         serializer = OnlineSubmissionSerializer(submission)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SubmissionListView(APIView):
@@ -265,3 +284,47 @@ class TeamActivateView(APIView):
         team.activate()
         serializer = OnlineTeamSerializer(team, context={"request": request})
         return Response(serializer.data)
+
+
+class VerifyTeamCodeView(APIView):
+    """Verify team upload code for uploader service (no authentication required)"""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        upload_code = request.data.get("code")
+
+        if not upload_code:
+            return Response(
+                {"error": "Team Auth code is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            team = OnlineTeam.objects.get(invite_code=upload_code)
+        except OnlineTeam.DoesNotExist:
+            return Response({"error": "Invalid team auth code"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Only attended teams can use the uploader
+        if team.status != "attended":
+            return Response(
+                {"error": "This team has not attended the event yet"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Return minimal team info for display
+        return Response(
+            {
+                "valid": True,
+                "team": {
+                    "id": team.id,
+                    "name": team.name,
+                    "leader": {
+                        "email": team.leader.email,
+                        "first_name": team.leader.first_name,
+                        "last_name": team.leader.last_name,
+                    },
+                    "member_count": team.member_count,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )

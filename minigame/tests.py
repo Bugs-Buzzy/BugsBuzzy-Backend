@@ -80,11 +80,11 @@ class MinigameAPITestCase(TestCase):
     def test_discount_calculation(self):
         """Test discount calculation ranges for various scores"""
         test_cases = [
-            (0, 0, 5, 5),        # Zero score: always 5%
-            (100, 5, 22, 30),    # Average: 22-30% range
-            (200, 10, 26, 35),   # Good: 26-35% range
-            (150, 8, 24, 32),    # Above average: 24-32% range
-            (200, 15, 30, 40),   # Excellent: 30-40% range
+            (0, 0, 5, 5),  # Zero score: always 5%
+            (100, 5, 22, 30),  # Average: 22-30% range
+            (200, 10, 26, 35),  # Good: 26-35% range
+            (150, 8, 24, 32),  # Above average: 24-32% range
+            (200, 15, 30, 40),  # Excellent: 30-40% range
         ]
 
         for carrot, coin, min_expected, max_expected in test_cases:

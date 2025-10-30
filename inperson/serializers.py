@@ -73,7 +73,16 @@ class InPersonSubmissionSerializer(serializers.ModelSerializer):
             "submitted_at",
             "updated_at",
         ]
-    read_only_fields = ["submitted_at", "updated_at", "score", "judge_notes", "submitted_by", "team", "is_final"]
+
+    read_only_fields = [
+        "submitted_at",
+        "updated_at",
+        "score",
+        "judge_notes",
+        "submitted_by",
+        "team",
+        "is_final",
+    ]
 
 
 class InPersonCompetitionSerializer(serializers.ModelSerializer):
