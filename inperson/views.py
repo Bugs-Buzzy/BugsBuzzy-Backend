@@ -1,3 +1,5 @@
+import hashlib
+from django.conf import settings
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -319,6 +321,16 @@ class SubmissionCreateView(APIView):
             # Mark team as attended after first submission
             if team.status == "active":
                 team.mark_attended()
+                
+            if phase == 4:
+                for t in InPersonTeam.objects.filter(status="attended"):
+                    string_ = f"{team.invite_code}_{team.team_number}_{settings.IN_PERSON_HIDDEN_CODE}_{t.team_number}"
+                    hashed = hashlib.sha256(string_.encode("utf-8")).hexdigest()
+                    if hashed == content:
+                        team.solve_count += 1
+                        team.save()
+                        t.solved_count += 1
+                        t.save()
 
         serializer = InPersonSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

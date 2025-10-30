@@ -32,6 +32,8 @@ PAYMENT_CALLBACK_URL = os.environ.get("PAYMENT_CALLBACK_URL")
 PAYMENT_SUCCESS_URL = os.environ.get("PAYMENT_SUCCESS_URL")
 PAYMENT_FAILED_URL = os.environ.get("PAYMENT_FAILED_URL")
 
+IN_PERSON_HIDDEN_CODE = os.environ.get("IN_PERSON_HIDDEN_CODE")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "your-default-secret-key")
 
