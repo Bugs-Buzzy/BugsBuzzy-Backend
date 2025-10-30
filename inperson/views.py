@@ -382,6 +382,7 @@ class VerifyTeamCodeView(APIView):
                 "team": {
                     "id": team.id,
                     "name": team.name,
+                    "team_number": team.team_number,
                     "leader": {
                         "email": team.leader.email,
                         "first_name": team.leader.first_name,
@@ -389,6 +390,45 @@ class VerifyTeamCodeView(APIView):
                     },
                     "member_count": team.member_count,
                 },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyUploadSessionView(APIView):
+    """Verify upload session to prevent session manipulation attacks"""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        team_number = request.data.get("team_number")
+        upload_code = request.data.get("upload_code")
+
+        if not team_number or not upload_code:
+            return Response(
+                {"error": "team_number and upload_code are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            team = InPersonTeam.objects.get(team_number=team_number, invite_code=upload_code)
+        except InPersonTeam.DoesNotExist:
+            return Response(
+                {"error": "Invalid team credentials"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Only attended teams can upload
+        if team.status != "attended":
+            return Response(
+                {"error": "Team has not attended the event"}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Return minimal verification response
+        return Response(
+            {
+                "valid": True,
+                "team_id": team.id,
+                "team_name": team.name,
             },
             status=status.HTTP_200_OK,
         )
