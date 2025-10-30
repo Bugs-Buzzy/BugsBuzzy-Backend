@@ -271,11 +271,25 @@ class SubmissionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        phase = request.data.get("phase")
+        raw_phase = request.data.get("phase")
         content = request.data.get("content", "").strip()
 
-        if phase is None:
+        if raw_phase is None:
             return Response({"error": "Phase is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            phase = int(raw_phase)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Phase must be a number"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        allowed_phases = {0, 2, 4}
+        if phase not in allowed_phases:
+            return Response(
+                {"error": "Submissions are only allowed for phases 0, 2, and 4"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not content:
             return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -289,23 +303,25 @@ class SubmissionCreateView(APIView):
                 {"error": f"Phase {phase} is not active yet"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Create or update submission
-        submission, created = InPersonSubmission.objects.update_or_create(
-            team=team,
-            phase=phase,
-            defaults={
-                "content": content,
-            },
-        )
+        # Create a new submission and mark it as the final one for this team+phase.
+        with db_transaction.atomic():
+            # Mark previous submissions (if any) as not final
+            InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(is_final=False)
 
-        # Mark team as attended after first submission
-        if created and team.status == "active":
-            team.mark_attended()
+            submission = InPersonSubmission.objects.create(
+                team=team,
+                phase=phase,
+                content=content,
+                submitted_by=request.user,
+                is_final=True,
+            )
+
+            # Mark team as attended after first submission
+            if team.status == "active":
+                team.mark_attended()
 
         serializer = InPersonSubmissionSerializer(submission)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SubmissionListView(APIView):
