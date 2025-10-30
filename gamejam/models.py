@@ -149,12 +149,17 @@ class OnlineSubmission(models.Model):
     """Submission model for the single online phase."""
 
     team = models.ForeignKey(OnlineTeam, on_delete=models.CASCADE, related_name="submissions")
-
-    # Content
-    title = models.CharField(max_length=200, blank=True)
-    description = models.TextField(blank=True)
-    file = models.FileField(upload_to="online/submissions/", null=True, blank=True)
-    game_url = models.URLField(blank=True)
+    submitted_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="online_submissions",
+    )
+    phase = models.IntegerField(default=0)
+    content = models.TextField()
+    # Historical submissions are kept. One submission per (team, phase) may be marked final.
+    is_final = models.BooleanField(default=False)
 
     # Judging
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -164,10 +169,18 @@ class OnlineSubmission(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [["team"]]
-        ordering = ["team"]
+        # Allow many submissions per team+phase, but ensure at most one final submission
+        # is marked per (team, phase).
+        ordering = ["team", "phase", "-submitted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "phase"],
+                condition=models.Q(is_final=True),
+                name="unique_final_per_online_team_phase",
+            )
+        ]
         verbose_name = "Online Submission"
         verbose_name_plural = "Online Submissions"
 
     def __str__(self):
-        return f"{self.team.name} - Online Submission"
+        return f"{self.team.name} - Phase {self.phase}"

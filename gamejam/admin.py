@@ -196,42 +196,75 @@ class OnlineMemberAdmin(admin.ModelAdmin):
 
 @admin.register(OnlineSubmission)
 class OnlineSubmissionAdmin(admin.ModelAdmin):
-    list_display = ("team_name", "title", "game_url_link", "score_display", "submitted_at")
-    list_filter = ("submitted_at",)
-    search_fields = ("team__name", "title", "description")
-    readonly_fields = ("submitted_at", "updated_at")
-    date_hierarchy = "submitted_at"
+    list_display = (
+        "team",
+        "submitted_by",
+        "phase_display",
+        "is_final_display",
+        "score_display",
+        "submitted_at",
+    )
+    list_filter = ("phase", "submitted_at", "submitted_by", "is_final")
+    search_fields = ("team__name", "content")
+    readonly_fields = ("submitted_at", "updated_at", "content_preview", "submitted_by")
 
     fieldsets = (
-        ("Team", {"fields": ("team",)}),
-        ("Submission", {"fields": ("title", "description", "game_url", "file")}),
+        (
+            "Submission Info",
+            {
+                "fields": (
+                    "team",
+                    "submitted_by",
+                    "is_final",
+                    "phase",
+                    "content_preview",
+                    "submitted_at",
+                    "updated_at",
+                )
+            },
+        ),
         ("Judging", {"fields": ("score", "judge_notes")}),
-        ("Metadata", {"fields": ("submitted_at", "updated_at"), "classes": ("collapse",)}),
     )
 
-    @admin.display(description="Team", ordering="team__name")
-    def team_name(self, obj):
-        return format_html(
-            '<strong>{}</strong><br/><small style="color:#6b7280;">Members: {}</small>',
-            obj.team.name,
-            obj.team.member_count,
-        )
-
-    @admin.display(description="Game URL")
-    def game_url_link(self, obj):
-        if obj.game_url:
-            return format_html(
-                '<a href="{}" target="_blank" style="color:#3b82f6;">🔗 View Game</a>', obj.game_url
-            )
-        return "-"
+    @admin.display(description="Phase", ordering="phase")
+    def phase_display(self, obj):
+        return f"🎮 Phase {obj.phase}"
 
     @admin.display(description="Score")
     def score_display(self, obj):
         if obj.score is not None:
             color = "#10b981" if obj.score >= 70 else "#f59e0b" if obj.score >= 50 else "#ef4444"
             return format_html(
-                '<span style="color:{}; font-weight:bold; font-size:16px;">{}</span>',
-                color,
-                obj.score,
+                '<span style="color:{};font-weight:bold;">{}/100</span>', color, obj.score
             )
         return format_html('<span style="color:#6b7280;">Not scored</span>')
+
+    @admin.display(description="Content")
+    def content_preview(self, obj):
+        if obj.content:
+            preview = obj.content[:200] + "..." if len(obj.content) > 200 else obj.content
+            return format_html(
+                '<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview
+            )
+        return "-"
+
+    @admin.display(description="Final")
+    def is_final_display(self, obj):
+        return format_html(
+            '<span style="font-weight:bold;color:{}">{}</span>',
+            "#10b981" if obj.is_final else "#6b7280",
+            "YES" if obj.is_final else "no",
+        )
+
+    @admin.action(description="Mark selected submission(s) as Final")
+    def mark_as_final(self, request, queryset):
+        # Only one final per team+phase - so mark others false first per item
+        for submission in queryset:
+            OnlineSubmission.objects.filter(
+                team=submission.team, phase=submission.phase, is_final=True
+            ).update(is_final=False)
+            submission.is_final = True
+            submission.save(update_fields=["is_final"])
+        self.message_user(request, f"Marked {queryset.count()} submission(s) as final.")
+
+    actions = [mark_as_final]
