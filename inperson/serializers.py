@@ -34,6 +34,7 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "team_number",
             "description",
             "avatar",
             "status",
@@ -44,7 +45,7 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
             "is_leader",
             "created_at",
         ]
-        read_only_fields = ["invite_code", "created_at"]
+        read_only_fields = ["invite_code", "team_number", "created_at"]
 
     def get_member_count(self, obj):
         return obj.member_count
