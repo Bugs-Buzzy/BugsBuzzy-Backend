@@ -17,10 +17,11 @@ class Announcement(models.Model):
 
 
 class UserAnnouncement(models.Model):
-    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name="user_announcements")
+    announcement = models.ForeignKey(
+        Announcement, on_delete=models.CASCADE, related_name="user_announcements"
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="announcements")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.email} - {self.announcement.title}"
-    

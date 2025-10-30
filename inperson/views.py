@@ -280,9 +280,7 @@ class SubmissionCreateView(APIView):
         try:
             phase = int(raw_phase)
         except (TypeError, ValueError):
-            return Response(
-                {"error": "Phase must be a number"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Phase must be a number"}, status=status.HTTP_400_BAD_REQUEST)
 
         allowed_phases = {0, 2, 4}
         if phase not in allowed_phases:
@@ -306,7 +304,9 @@ class SubmissionCreateView(APIView):
         # Create a new submission and mark it as the final one for this team+phase.
         with db_transaction.atomic():
             # Mark previous submissions (if any) as not final
-            InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(is_final=False)
+            InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(
+                is_final=False
+            )
 
             submission = InPersonSubmission.objects.create(
                 team=team,
@@ -357,39 +357,38 @@ class VerifyTeamCodeView(APIView):
 
     def post(self, request):
         upload_code = request.data.get("code")
-        
+
         if not upload_code:
             return Response(
-                {"error": "Team auth code is required"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Team auth code is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
             team = InPersonTeam.objects.get(invite_code=upload_code)
         except InPersonTeam.DoesNotExist:
-            return Response(
-                {"error": "Invalid team auth code"}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Invalid team auth code"}, status=status.HTTP_404_NOT_FOUND)
 
         # Only attended teams can use the uploader
         if team.status != "attended":
             return Response(
-                {"error": "This team has not attended the event yet"}, 
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "This team has not attended the event yet"},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         # Return minimal team info for display
-        return Response({
-            "valid": True,
-            "team": {
-                "id": team.id,
-                "name": team.name,
-                "leader": {
-                    "email": team.leader.email,
-                    "first_name": team.leader.first_name,
-                    "last_name": team.leader.last_name,
+        return Response(
+            {
+                "valid": True,
+                "team": {
+                    "id": team.id,
+                    "name": team.name,
+                    "leader": {
+                        "email": team.leader.email,
+                        "first_name": team.leader.first_name,
+                        "last_name": team.leader.last_name,
+                    },
+                    "member_count": team.member_count,
                 },
-                "member_count": team.member_count,
-            }
-        }, status=status.HTTP_200_OK)
+            },
+            status=status.HTTP_200_OK,
+        )

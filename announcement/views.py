@@ -9,6 +9,10 @@ class MyAnnouncementsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user_announcements = UserAnnouncement.objects.filter(user=request.user).select_related("announcement").order_by("-created_at")
+        user_announcements = (
+            UserAnnouncement.objects.filter(user=request.user)
+            .select_related("announcement")
+            .order_by("-created_at")
+        )
         serializer = UserAnnouncementSerializer(user_announcements, many=True)
         return Response(serializer.data)
