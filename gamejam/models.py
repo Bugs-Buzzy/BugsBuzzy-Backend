@@ -157,7 +157,7 @@ class OnlineSubmission(models.Model):
         related_name="online_submissions",
     )
     phase = models.IntegerField(default=0)
-    content = models.TextField()
+    content = models.TextField(blank=True, default="")
     # Historical submissions are kept. One submission per (team, phase) may be marked final.
     is_final = models.BooleanField(default=False)
 
