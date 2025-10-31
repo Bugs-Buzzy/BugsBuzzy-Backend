@@ -325,7 +325,7 @@ class SubmissionCreateView(APIView):
             if phase == 4:
                 for t in InPersonTeam.objects.filter(status="attended"):
                     hashed = generate_hash(team.invite_code, t.invite_code)
-                    if hashed == content:   
+                    if hashed == content:
                         team.solve_count += 1
                         team.save()
                         t.solved_count += 1
