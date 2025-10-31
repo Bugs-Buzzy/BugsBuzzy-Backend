@@ -295,7 +295,7 @@ class SubmissionCreateView(APIView):
         allowed_phases = {0, 2, 3, 4}
         if phase not in allowed_phases:
             return Response(
-                {"error": "Submissions are only allowed for phases 0, 2, and 4"},
+                {"error": "Submissions are only allowed for phases 0, 2, 3, 4"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
