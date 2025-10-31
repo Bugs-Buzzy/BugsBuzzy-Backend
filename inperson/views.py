@@ -313,6 +313,12 @@ class SubmissionCreateView(APIView):
 
         # Create a new submission and mark it as the final one for this team+phase.
         with db_transaction.atomic():
+            if InPersonSubmission.objects.filter(content=content).exists() and phase == 4:
+                return Response(
+                    {"error": "You have already solved this game"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
             # Mark previous submissions (if any) as not final
             InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(
                 is_final=False
@@ -331,13 +337,27 @@ class SubmissionCreateView(APIView):
                 team.mark_attended()
                 
             if phase == 4:
+                success = False
                 for t in InPersonTeam.objects.filter(status="attended"):
                     hashed = generate_hash(team.invite_code, t.invite_code)
-                    if t.invite_code != team.invite_code and hashed == content:
+                    if hashed == content:
+                        if t.invite_code == team.invite_code:
+                            return Response(
+                                {"error": "You can't solve your game"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
                         team.solve_count += 1
                         team.save()
                         t.solved_count += 1
                         t.save()
+                        success = True
+                        break
+                
+                if not success:
+                    return Response(
+                        {"error": "Invalid hash value"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         serializer = InPersonSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
