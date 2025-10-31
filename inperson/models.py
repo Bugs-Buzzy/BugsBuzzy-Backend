@@ -230,6 +230,9 @@ class InPersonSubmission(models.Model):
 
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    solver_team_number = models.IntegerField(null=True, blank=True, default=-1)
+    owner_team_number = models.IntegerField(null=True, blank=True, default=-1)
 
     class Meta:
         # Allow many submissions per team+phase, but ensure at most one final submission
