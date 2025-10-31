@@ -309,6 +309,7 @@ class InPersonMemberAdmin(admin.ModelAdmin):
 @admin.register(InPersonSubmission)
 class InPersonSubmissionAdmin(admin.ModelAdmin):
     list_display = (
+        "team__team_number",
         "team",
         "submitted_by",
         "phase_display",
