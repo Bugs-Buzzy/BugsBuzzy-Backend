@@ -161,6 +161,8 @@ class InPersonTeamAdmin(admin.ModelAdmin):
         "paid_count_display",
         "invite_code",
         "created_at",
+        "solve_count",
+        "solved_count"
     )
     list_filter = ("status", TeamSizeFilter, "created_at")
     search_fields = (
@@ -171,7 +173,7 @@ class InPersonTeamAdmin(admin.ModelAdmin):
         "leader__last_name",
         "invite_code",
     )
-    readonly_fields = ("invite_code", "created_at", "updated_at", "member_count_display")
+    readonly_fields = ("invite_code", "created_at", "updated_at", "member_count_display", "solve_count", "solved_count")
     inlines = [InPersonMemberInline]
     actions = ["mark_as_active", "mark_as_attended", "mark_as_incomplete"]
     date_hierarchy = "created_at"
@@ -180,7 +182,7 @@ class InPersonTeamAdmin(admin.ModelAdmin):
         ("Basic Info", {"fields": ("name", "team_number", "description", "leader", "status")}),
         (
             "Team Details",
-            {"fields": ("invite_code", "member_count_display", "created_at", "updated_at")},
+            {"fields": ("invite_code", "member_count_display", "created_at", "updated_at", "solve_count", "solved_count")},
         ),
     )
 
