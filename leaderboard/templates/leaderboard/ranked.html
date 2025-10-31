@@ -1,0 +1,267 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% trans "Leaderboard (Ranked)" %} - باگزبازی</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #fff8e1, #d8f5ff);
+      font-family: Calibri, Tahoma, Arial, sans-serif;
+    ">
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="min-height: 100vh">
+      <tr>
+        <td align="center" style="padding: 20px 10px">
+          <table
+            class="container"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              max-width: 800px;
+              background: #ffffff;
+              border-radius: 12px;
+              border: 3px solid #ffd580;
+              box-shadow: 0 6px 25px rgba(255, 183, 77, 0.25);
+              overflow: hidden;
+            ">
+            <!-- Header -->
+            <tr>
+              <td
+                align="center"
+                style="
+                  padding: 18px 15px;
+                  background: linear-gradient(135deg, #fef8e7, #e3f3fb);
+                  border-bottom: 3px solid #ffd580;
+                ">
+                <img
+                  class="logo"
+                  src="https://s34.picofile.com/file/8487595426/LOGO.png"
+                  alt="Logo"
+                  width="80"
+                  style="display: block; margin: 0 auto 8px" />
+                <h1
+                  class="header-title"
+                  style="
+                    margin: 0;
+                    color: #005c8a;
+                    font-size: 28px;
+                    font-weight: bold;
+                  ">
+                  باگزبازی
+                </h1>
+                <p
+                  class="header-subtitle"
+                  style="margin: 3px 0 0; color: #007ca8; font-size: 13px">
+                  {% trans "رویداد بازی‌سازی دانشگاه صنعتی شریف" %}
+                </p>
+              </td>
+            </tr>
+
+            <!-- Main Content -->
+            <tr>
+              <td style="padding: 25px 20px; background: #fafcff">
+                <h2
+                  class="welcome"
+                  style="
+                    color: #333;
+                    font-size: 20px;
+                    margin: 0 0 18px;
+                    text-align: center;
+                  ">
+                  {% trans "جدول امتیازات مسابقات حضوری" %}
+                </h2>
+
+                <table
+                  style="
+                    border-collapse: collapse;
+                    width: 100%;
+                    direction: rtl;
+                    font-size: 14px;
+                    text-align: center;
+                  ">
+                  <thead>
+                    <tr style="background: #fff3e0; color: #004d61">
+                      <th style="border: 1px solid #ffd580; padding: 10px">
+                        {% trans "شماره تیم" %}
+                      </th>
+                      <th style="border: 1px solid #ffd580; padding: 10px">
+                        {% trans "نام تیم" %}
+                      </th>
+                      <th style="border: 1px solid #ffd580; padding: 10px">
+                        {% trans "تعداد بازی‌های حل‌شده" %}
+                      </th>
+                      <th style="border: 1px solid #ffd580; padding: 10px">
+                        {% trans "تعداد حل‌های بازی این تیم" %}
+                      </th>
+                      <th style="border: 1px solid #ffd580; padding: 10px">
+                        {% trans "امتیاز فاز صفر" %}
+                      </th>
+                      <th
+                        style="
+                          border: 1px solid #ffd54f;
+                          padding: 10px;
+                          text-align: center;
+                          font-weight: bold;
+                          color: #004d40;
+                          background: linear-gradient(135deg, #fff176, #ffd54f);
+                          box-shadow: 0 0 8px rgba(255, 213, 79, 0.6);
+                          font-size: 16px;
+                          letter-spacing: 1px;
+                        ">
+                        {% trans "امتیاز نهایی" %}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for team in teams %}
+                    <tr style="background: {% cycle '#FFFFFF' '#FFF9E6' %};">
+                      <td
+                        style="
+                          border: 1px solid #ffe0b2;
+                          padding: 8px;
+                          text-align: center;
+                        ">
+                        {{ team.team_number }}
+                      </td>
+                      <td style="border: 1px solid #ffe0b2; padding: 8px">
+                        {{ team.name }}
+                      </td>
+                      <td
+                        style="
+                          border: 1px solid #ffe0b2;
+                          padding: 8px;
+                          text-align: center;
+                        ">
+                        {{ team.solve_count }}
+                      </td>
+                      <td
+                        style="
+                          border: 1px solid #ffe0b2;
+                          padding: 8px;
+                          text-align: center;
+                        ">
+                        {{ team.solved_count }}
+                      </td>
+                      <td
+                        style="
+                          border: 1px solid #ffe0b2;
+                          padding: 8px;
+                          text-align: center;
+                        ">
+                        {{ team.phase0_score|default:"-" }}
+                      </td>
+                      <td
+                        style="
+                          border: 1px solid #ffe0b2;
+                          padding: 8px;
+                          text-align: center;
+                          font-weight: bold;
+                          color: #005c8a;
+                        ">
+                        {{ team.total_score }}
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td
+                        colspan="6"
+                        style="padding: 12px; text-align: center; color: #999">
+                        {% trans "No attended teams found." %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  padding: 12px;
+                  background: linear-gradient(to top, #e1f5fe, #fff8e1);
+                  text-align: center;
+                  border-top: 2px solid #ffd580;
+                ">
+                <div style="text-align: center">
+                  <a
+                    href="https://bugsbuzzy.ir/"
+                    style="
+                      display: inline-block;
+                      margin: 4px 4px;
+                      padding: 8px 14px;
+                      color: #004d61;
+                      text-decoration: none;
+                      font-size: 11px;
+                      font-weight: bold;
+                      background: rgba(255, 213, 128, 0.3);
+                      border: 2px solid #ffb84d;
+                      border-radius: 5px;
+                    "
+                    >🌐 سایت</a
+                  >
+                  <a
+                    href="https://t.me/bugsbuzzy"
+                    style="
+                      display: inline-block;
+                      margin: 4px 4px;
+                      padding: 8px 14px;
+                      color: #004d61;
+                      text-decoration: none;
+                      font-size: 11px;
+                      font-weight: bold;
+                      background: rgba(179, 229, 255, 0.3);
+                      border: 2px solid #80d8ff;
+                      border-radius: 5px;
+                    "
+                    >📢 کانال تلگرام</a
+                  >
+                  <a
+                    href="https://t.me/BugsBuzzy_Support"
+                    style="
+                      display: inline-block;
+                      margin: 4px 4px;
+                      padding: 8px 14px;
+                      color: #004d61;
+                      text-decoration: none;
+                      font-size: 11px;
+                      font-weight: bold;
+                      background: rgba(179, 229, 255, 0.3);
+                      border: 2px solid #80d8ff;
+                      border-radius: 5px;
+                    "
+                    >💬 پشتیبانی</a
+                  >
+                </div>
+                <img
+                  src="https://s34.picofile.com/file/8487595250/banner.png"
+                  alt="Sponsors"
+                  style="max-width: 55%; height: auto; margin-top: 12px" />
+              </td>
+            </tr>
+          </table>
+
+          <p
+            class="footer-text"
+            style="
+              color: rgba(80, 80, 80, 0.7);
+              font-size: 9px;
+              text-align: center;
+              margin: 10px 0 0;
+            ">
+            {% trans "این صفحه به صورت خودکار تولید شده است" %}
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
