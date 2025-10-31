@@ -1,4 +1,3 @@
-import hashlib
 from django.conf import settings
 from rest_framework import status, permissions
 from rest_framework.response import Response
@@ -7,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction as db_transaction
 from accounts.permissions import HasPurchased
 from .models import InPersonTeam, InPersonMember, InPersonCompetition, InPersonSubmission
+from .utils import generate_hash
 from .serializers import (
     InPersonTeamSerializer,
     InPersonMemberSerializer,
@@ -324,9 +324,8 @@ class SubmissionCreateView(APIView):
                 
             if phase == 4:
                 for t in InPersonTeam.objects.filter(status="attended"):
-                    string_ = f"{team.invite_code}_{team.team_number}_{settings.IN_PERSON_HIDDEN_CODE}_{t.team_number}"
-                    hashed = hashlib.sha256(string_.encode("utf-8")).hexdigest()
-                    if hashed == content:
+                    hashed = generate_hash(team.invite_code, t.invite_code)
+                    if hashed == content:   
                         team.solve_count += 1
                         team.save()
                         t.solved_count += 1

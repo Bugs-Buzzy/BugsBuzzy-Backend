@@ -24,8 +24,24 @@ def _base_queryset_with_phase0():
 
 
 def public_leaderboard(request):
-    teams = _base_queryset_with_phase0().order_by('team_number_int', 'team_number')
-    return render(request, 'leaderboard/public.html', {'teams': teams})
+    teams = list(_base_queryset_with_phase0().order_by('team_number_int', 'team_number'))
+
+    count = len(teams)
+    avg_solve_count = sum(t.solve_count for t in teams) / count if count else 0.0
+    avg_solved_count = sum(t.solved_count for t in teams) / count if count else 0.0
+    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None]
+    avg_phase0_score = sum(phase0_vals) / len(phase0_vals) if phase0_vals else 0.0
+
+    return render(
+        request,
+        'leaderboard/public.html',
+        {
+            'teams': teams,
+            'avg_solve_count': avg_solve_count,
+            'avg_solved_count': avg_solved_count,
+            'avg_phase0_score': avg_phase0_score,
+        },
+    )
 
 
 def ranked_leaderboard(request):
@@ -43,4 +59,21 @@ def ranked_leaderboard(request):
         )
 
     teams.sort(key=lambda o: (-o.total_score, tn_int(o)))
-    return render(request, 'leaderboard/ranked.html', {'teams': teams})
+    count = len(teams)
+    avg_solve_count = sum(t.solve_count for t in teams) / count if count else 0.0
+    avg_solved_count = sum(t.solved_count for t in teams) / count if count else 0.0
+    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None]
+    avg_phase0_score = sum(phase0_vals) / len(phase0_vals) if phase0_vals else 0.0
+    avg_total_score = sum(t.total_score for t in teams) / count if count else 0.0
+
+    return render(
+        request,
+        'leaderboard/ranked.html',
+        {
+            'teams': teams,
+            'avg_solve_count': avg_solve_count,
+            'avg_solved_count': avg_solved_count,
+            'avg_phase0_score': avg_phase0_score,
+            'avg_total_score': avg_total_score,
+        },
+    )
