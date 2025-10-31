@@ -319,9 +319,10 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
         "solver_team_number",
         "owner_team_number"
     )
-    list_filter = ("phase", "submitted_at", "submitted_by", "is_final")
+    list_filter = ("phase", "submitted_at", "submitted_by", "is_final", "owner_team_number")
     search_fields = ("team__name", "content")
     readonly_fields = ("submitted_at", "updated_at", "content_preview", "submitted_by")
+    ordering = ("-submitted_at",)
 
     fieldsets = (
         (
