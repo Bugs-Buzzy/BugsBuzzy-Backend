@@ -290,6 +290,7 @@ class VerifyTeamCodeView(APIView):
     """Verify team upload code for uploader service (no authentication required)"""
 
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # No authentication required
 
     def post(self, request):
         upload_code = request.data.get("code")

@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction as db_transaction
 from accounts.permissions import HasPurchased
 from .models import InPersonTeam, InPersonMember, InPersonCompetition, InPersonSubmission
+from .utils import generate_hash
 from .serializers import (
     InPersonTeamSerializer,
     InPersonMemberSerializer,
@@ -179,6 +181,14 @@ class TeamInviteCodeRevokeView(APIView):
 
     def delete(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
+        
+        # Prevent editing if team has attended
+        if team.status == "attended":
+            return Response(
+                {"error": "Cannot edit a team that has attended the event"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         team.revoke_invite_code()
         serializer = InPersonTeamSerializer(team, context={"request": request})
         return Response(
@@ -319,6 +329,15 @@ class SubmissionCreateView(APIView):
             # Mark team as attended after first submission
             if team.status == "active":
                 team.mark_attended()
+                
+            if phase == 4:
+                for t in InPersonTeam.objects.filter(status="attended"):
+                    hashed = generate_hash(team.invite_code, t.invite_code)
+                    if hashed == content:
+                        team.solve_count += 1
+                        team.save()
+                        t.solved_count += 1
+                        t.save()
 
         serializer = InPersonSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -354,6 +373,7 @@ class VerifyTeamCodeView(APIView):
     """Verify team upload code for uploader service (no authentication required)"""
 
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # No authentication required
 
     def post(self, request):
         upload_code = request.data.get("code")
@@ -393,42 +413,24 @@ class VerifyTeamCodeView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-
-
-class VerifyUploadSessionView(APIView):
-    """Verify upload session to prevent session manipulation attacks"""
+class GetTeamByNumberView(APIView):
+    """Get team information by team number (public endpoint for indexing)"""
 
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # No authentication required
 
-    def post(self, request):
-        team_number = request.data.get("team_number")
-        upload_code = request.data.get("upload_code")
-
-        if not team_number or not upload_code:
-            return Response(
-                {"error": "team_number and upload_code are required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+    def get(self, request, team_number):
         try:
-            team = InPersonTeam.objects.get(team_number=team_number, invite_code=upload_code)
+            team = InPersonTeam.objects.get(team_number=team_number)
+            return Response(
+                {
+                    "id": team.id,
+                    "name": team.name,
+                    "team_number": team.team_number,
+                },
+                status=status.HTTP_200_OK,
+            )
         except InPersonTeam.DoesNotExist:
             return Response(
-                {"error": "Invalid team credentials"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND
             )
-
-        # Only attended teams can upload
-        if team.status != "attended":
-            return Response(
-                {"error": "Team has not attended the event"}, status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Return minimal verification response
-        return Response(
-            {
-                "valid": True,
-                "team_id": team.id,
-                "team_name": team.name,
-            },
-            status=status.HTTP_200_OK,
-        )

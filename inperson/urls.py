@@ -22,9 +22,5 @@ urlpatterns = [
     path("submissions/", views.SubmissionListView.as_view(), name="submission-list"),
     # Upload code verification (no auth required)
     path("verify-team-code/", views.VerifyTeamCodeView.as_view(), name="verify-team-code"),
-    path(
-        "verify-upload-session/",
-        views.VerifyUploadSessionView.as_view(),
-        name="verify-upload-session",
-    ),
+    path("team-by-number/<str:team_number>/", views.GetTeamByNumberView.as_view(), name="team-by-number"),
 ]

@@ -92,6 +92,9 @@ class InPersonTeam(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="incomplete")
     invite_code = models.CharField(max_length=8, unique=True, editable=False)
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name="led_inperson_teams")
+    
+    solve_count = models.IntegerField(default=0)
+    solved_count = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
