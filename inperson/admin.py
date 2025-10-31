@@ -316,6 +316,8 @@ class InPersonSubmissionAdmin(admin.ModelAdmin):
         "is_final_display",
         "score_display",
         "submitted_at",
+        "solver_team_number",
+        "owner_team_number"
     )
     list_filter = ("phase", "submitted_at", "submitted_by", "is_final")
     search_fields = ("team__name", "content")

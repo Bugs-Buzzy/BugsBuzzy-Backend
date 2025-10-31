@@ -96,14 +96,17 @@
                         {% trans "نام تیم" %}
                       </th>
                       <th style="border: 1px solid #ffd580; padding: 10px">
-                        {% trans "تعداد بازی‌های حل‌شده" %}
+                        {% trans "تعداد بازی‌های حل‌کرده" %}
                       </th>
                       <th style="border: 1px solid #ffd580; padding: 10px">
                         {% trans "تعداد حل‌های بازی این تیم" %}
                       </th>
+                      <!-- Phase 0 Score column hidden -->
+                      <!--
                       <th style="border: 1px solid #ffd580; padding: 10px">
                         {% trans "امتیاز فاز صفر" %}
                       </th>
+                      -->
                       <th
                         style="
                           border: 1px solid #ffd54f;
@@ -150,6 +153,8 @@
                         ">
                         {{ team.solved_count }}
                       </td>
+                      <!-- Phase 0 Score column hidden -->
+                      <!--
                       <td
                         style="
                           border: 1px solid #ffe0b2;
@@ -158,6 +163,7 @@
                         ">
                         {{ team.phase0_score|default:"-" }}
                       </td>
+                      -->
                       <td
                         style="
                           border: 1px solid #ffe0b2;
@@ -172,7 +178,7 @@
                     {% empty %}
                     <tr>
                       <td
-                        colspan="6"
+                        colspan="5"
                         style="padding: 12px; text-align: center; color: #999">
                         {% trans "No attended teams found." %}
                       </td>
@@ -213,6 +219,8 @@
                         ">
                         {{ avg_solved_count|floatformat:2 }}
                       </td>
+                      <!-- Phase 0 Score average hidden -->
+                      <!--
                       <td
                         style="
                           border: 2px solid #ffca28;
@@ -223,6 +231,7 @@
                         ">
                         {{ avg_phase0_score|floatformat:2 }}
                       </td>
+                      -->
                       <td
                         style="
                           border: 2px solid #ffca28;

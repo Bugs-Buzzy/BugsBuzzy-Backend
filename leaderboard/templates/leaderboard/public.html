@@ -113,7 +113,7 @@
                           border: 1px solid #ffd580;
                           text-align: center;
                         ">
-                        {% trans "تعداد بازی‌های حل‌شده" %}
+                        {% trans "تعداد بازی‌های حل‌کرده" %}
                       </th>
                       <th
                         style="
@@ -123,6 +123,8 @@
                         ">
                         {% trans "تعداد حل‌های بازی این تیم" %}
                       </th>
+                      <!-- Phase 0 Score column hidden -->
+                      <!--
                       <th
                         style="
                           padding: 10px;
@@ -131,6 +133,7 @@
                         ">
                         {% trans "امتیاز فاز صفر" %}
                       </th>
+                      -->
                     </tr>
                   </thead>
                   <tbody>
@@ -169,6 +172,8 @@
                         ">
                         {{ team.solved_count }}
                       </td>
+                      <!-- Phase 0 Score column hidden -->
+                      <!--
                       <td
                         style="
                           padding: 8px;
@@ -177,11 +182,12 @@
                         ">
                         {{ team.phase0_score|default:"-" }}
                       </td>
+                      -->
                     </tr>
                     {% empty %}
                     <tr>
                       <td
-                        colspan="5"
+                        colspan="4"
                         style="padding: 10px; text-align: center; color: #888">
                         {% trans "No attended teams found." %}
                       </td>
@@ -222,6 +228,8 @@
                         ">
                         {{ avg_solved_count|floatformat:2 }}
                       </td>
+                      <!-- Phase 0 Score average hidden -->
+                      <!--
                       <td
                         style="
                           padding: 10px;
@@ -232,6 +240,7 @@
                         ">
                         {{ avg_phase0_score|floatformat:2 }}
                       </td>
+                      -->
                     </tr>
                     {% endif %}
                   </tbody>
