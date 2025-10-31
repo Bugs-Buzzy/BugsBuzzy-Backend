@@ -5,9 +5,11 @@ from django.db.models import Sum
 def calculate_in_person_score(solve_count, solved_count, phase0_score):
     try: 
         games_count = InPersonSubmission.objects.filter(phase=2, score=1).count()
-        ttavg = InPersonTeam.objects.filter(status="attended").aggregate(sum=Sum('solved_count'))['sum'] / games_count * 2 / 3
+        teams_with_solved = InPersonTeam.objects.filter(status="attended", solved_count__gt=0)
+        non_zero_solved_counts = [team.solved_count for team in teams_with_solved]
+        ttavg = sum(non_zero_solved_counts) / len(non_zero_solved_counts) * 2 / 3 if non_zero_solved_counts else 0
         phase4_solved_score = 500 * math.exp(-1 * ((solved_count - ttavg) ** 2) / games_count)
     except ZeroDivisionError:
         phase4_solved_score = 0
 
-    return phase4_solved_score + 25 * solve_count + phase0_score
+    return phase4_solved_score + 10 * solve_count + phase0_score
