@@ -373,6 +373,7 @@ class VerifyTeamCodeView(APIView):
     """Verify team upload code for uploader service (no authentication required)"""
 
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # No authentication required
 
     def post(self, request):
         upload_code = request.data.get("code")
@@ -412,3 +413,24 @@ class VerifyTeamCodeView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+class GetTeamByNumberView(APIView):
+    """Get team information by team number (public endpoint for indexing)"""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # No authentication required
+
+    def get(self, request, team_number):
+        try:
+            team = InPersonTeam.objects.get(team_number=team_number)
+            return Response(
+                {
+                    "id": team.id,
+                    "name": team.name,
+                    "team_number": team.team_number,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except InPersonTeam.DoesNotExist:
+            return Response(
+                {"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND
+            )
