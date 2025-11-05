@@ -26,10 +26,13 @@ def _base_queryset_with_phase0():
 def public_leaderboard(request):
     teams = list(_base_queryset_with_phase0().order_by('team_number_int', 'team_number'))
 
-    count = len(teams)
-    avg_solve_count = sum(t.solve_count for t in teams) / count if count else 0.0
-    avg_solved_count = sum(t.solved_count for t in teams) / count if count else 0.0
-    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None]
+    # Only include non-zero values in averages
+    solve_vals = [t.solve_count for t in teams if getattr(t, "solve_count", 0)]
+    solved_vals = [t.solved_count for t in teams if getattr(t, "solved_count", 0)]
+    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None and float(t.phase0_score) != 0.0]
+
+    avg_solve_count = sum(solve_vals) / len(solve_vals) if solve_vals else 0.0
+    avg_solved_count = sum(solved_vals) / len(solved_vals) if solved_vals else 0.0
     avg_phase0_score = sum(phase0_vals) / len(phase0_vals) if phase0_vals else 0.0
 
     return render(
@@ -59,12 +62,16 @@ def ranked_leaderboard(request):
         )
 
     teams.sort(key=lambda o: (-o.total_score, tn_int(o)))
-    count = len(teams)
-    avg_solve_count = sum(t.solve_count for t in teams) / count if count else 0.0
-    avg_solved_count = sum(t.solved_count for t in teams) / count if count else 0.0
-    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None]
+    # Only include non-zero values in averages
+    solve_vals = [t.solve_count for t in teams if getattr(t, "solve_count", 0)]
+    solved_vals = [t.solved_count for t in teams if getattr(t, "solved_count", 0)]
+    phase0_vals = [float(t.phase0_score) for t in teams if t.phase0_score is not None and float(t.phase0_score) != 0.0]
+    total_vals = [t.total_score for t in teams if getattr(t, "total_score", 0.0)]
+
+    avg_solve_count = sum(solve_vals) / len(solve_vals) if solve_vals else 0.0
+    avg_solved_count = sum(solved_vals) / len(solved_vals) if solved_vals else 0.0
     avg_phase0_score = sum(phase0_vals) / len(phase0_vals) if phase0_vals else 0.0
-    avg_total_score = sum(t.total_score for t in teams) / count if count else 0.0
+    avg_total_score = sum(total_vals) / len(total_vals) if total_vals else 0.0
 
     return render(
         request,
