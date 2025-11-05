@@ -86,13 +86,19 @@ class InPersonTeam(models.Model):
     ]
 
     name = models.CharField(max_length=100)
-    team_number = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text="Unique team number for identification")
+    team_number = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Unique team number for identification",
+    )
     description = models.TextField(blank=True)
     avatar = models.TextField(blank=True, help_text="Base64 data URI for team avatar (max 256x256)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="incomplete")
     invite_code = models.CharField(max_length=8, unique=True, editable=False)
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name="led_inperson_teams")
-    
+
     solve_count = models.IntegerField(default=0)
     solved_count = models.IntegerField(default=0)
 
@@ -230,7 +236,7 @@ class InPersonSubmission(models.Model):
 
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     solver_team_number = models.IntegerField(null=True, blank=True, default=-1)
     owner_team_number = models.IntegerField(null=True, blank=True, default=-1)
 

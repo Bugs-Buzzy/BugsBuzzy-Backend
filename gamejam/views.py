@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db import transaction as db_transaction
 from .models import OnlineTeam, OnlineMember
+from payments.models import Transaction
 from .serializers import OnlineTeamSerializer, OnlineMemberSerializer
 from .models import OnlineCompetition, OnlineSubmission
 from .serializers import OnlineCompetitionSerializer, OnlineSubmissionSerializer
@@ -280,6 +281,17 @@ class TeamActivateView(APIView):
 
         if team.status != "inactive":
             return Response({"error": "Team already activated"}, status=status.HTTP_400_BAD_REQUEST)
+        # Ensure the leader has completed a 'gamejam' payment before activating.
+        # Transaction.items is stored as a JSON string (list of item keys/names).
+        has_gamejam_payment = Transaction.objects.filter(
+            user=request.user, status="completed", items__icontains='"gamejam"'
+        ).exists()
+
+        if not has_gamejam_payment:
+            return Response(
+                {"error": "No completed payment for gamejam found"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         team.activate()
         serializer = OnlineTeamSerializer(team, context={"request": request})
