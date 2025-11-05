@@ -181,14 +181,14 @@ class TeamInviteCodeRevokeView(APIView):
 
     def delete(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
-        
+
         # Prevent editing if team has attended
         if team.status == "attended":
             return Response(
                 {"error": "Cannot edit a team that has attended the event"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         team.revoke_invite_code()
         serializer = InPersonTeamSerializer(team, context={"request": request})
         return Response(
@@ -318,7 +318,7 @@ class SubmissionCreateView(APIView):
                     {"error": "You have already solved this game"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # Mark previous submissions (if any) as not final
             InPersonSubmission.objects.filter(team=team, phase=phase, is_final=True).update(
                 is_final=False
@@ -335,7 +335,7 @@ class SubmissionCreateView(APIView):
             # Mark team as attended after first submission
             if team.status == "active":
                 team.mark_attended()
-                
+
             if phase == 4:
                 success = False
                 for t in InPersonTeam.objects.filter(status="attended"):
@@ -352,7 +352,7 @@ class SubmissionCreateView(APIView):
                         t.save()
                         success = True
                         break
-                
+
                 if not success:
                     return Response(
                         {"error": "Invalid hash value"},
@@ -433,6 +433,8 @@ class VerifyTeamCodeView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
 class GetTeamByNumberView(APIView):
     """Get team information by team number (public endpoint for indexing)"""
 
@@ -451,6 +453,4 @@ class GetTeamByNumberView(APIView):
                 status=status.HTTP_200_OK,
             )
         except InPersonTeam.DoesNotExist:
-            return Response(
-                {"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
