@@ -71,7 +71,7 @@ class LobbygameCreateDiscountView(APIView):
         total_created = LobbyGameStatus.objects.count()
 
         if total_created < 6:
-            discount_percentage = 100
+            discount_percentage = 90
             message = "Congratulations! You are among the first 5 winners! Enjoy 100% discount!"
         elif total_created < 16:
             discount_percentage = 50
