@@ -64,6 +64,7 @@ INSTALLED_APPS += [
     "accounts",
     "payments",
     "minigame",
+    "lobbygame",
     "inperson",
     "workshops",
     "gamejam",
