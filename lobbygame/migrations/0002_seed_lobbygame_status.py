@@ -1,8 +1,7 @@
-# Generated manually on 2025-11-09
 from django.db import migrations
 
 
-def create_status_row(apps, schema_editor):
+def seed_status_row(apps, schema_editor):
     LobbygameResult = apps.get_model("lobbygame", "LobbygameResult")
     if not LobbygameResult.objects.filter(request_uuid="status").exists():
         LobbygameResult.objects.create(
@@ -19,9 +18,9 @@ def remove_status_row(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("lobbygame", "0003_lobbygameresult_discount_fields"),
+        ("lobbygame", "0001_initial"),
     ]
 
     operations = [
-        migrations.RunPython(create_status_row, remove_status_row),
+        migrations.RunPython(seed_status_row, remove_status_row),
     ]
