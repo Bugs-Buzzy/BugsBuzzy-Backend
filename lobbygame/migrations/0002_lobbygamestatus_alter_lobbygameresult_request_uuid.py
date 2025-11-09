@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("request_uuid", models.CharField(blank=True, max_length=255, null=True)),
-                ("de4scription", models.CharField(max_length=255)),
+                ("description", models.CharField(max_length=255)),
             ],
         ),
         migrations.AlterField(
