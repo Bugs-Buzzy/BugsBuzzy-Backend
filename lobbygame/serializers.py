@@ -3,11 +3,15 @@ from .models import LobbygameResult
 
 
 class LobbygameResultSerializer(serializers.ModelSerializer):
-    coupon_code = serializers.SerializerMethodField()
-
     class Meta:
         model = LobbygameResult
-        fields = ["description"]
+        fields = [
+            "request_uuid",
+            "description",
+            "discount_percentage",
+            "coupon_code",
+            "created_at",
+        ]
 
 
 class LobbygameSubmissionSerializer(serializers.Serializer):

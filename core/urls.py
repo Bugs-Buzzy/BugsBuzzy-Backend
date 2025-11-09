@@ -45,7 +45,7 @@ urlpatterns = [
     path("leaderboard/", include("leaderboard.urls")),
     path("payment/", include("payments.urls")),
     path("minigame/", include("minigame.urls")),
-    path("lobby-game/", include("lobbygame.urls")),
+    path("lobbygame/", include("lobbygame.urls")),
     path("workshops/", include("workshops.urls")),
     path("gamejam/", include("gamejam.urls")),
     path("announcement/", include("announcement.urls")),
