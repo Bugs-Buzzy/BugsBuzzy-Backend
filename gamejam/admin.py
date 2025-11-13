@@ -82,8 +82,8 @@ class TeamSizeFilter(admin.SimpleListFilter):
 @admin.register(OnlineTeam)
 class OnlineTeamAdmin(admin.ModelAdmin):
     list_display = (
-        "name",
         "team_number",
+        "name",
         "leader_info",
         "status_display",
         "member_count_display",
@@ -92,8 +92,8 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", TeamSizeFilter, "created_at")
     search_fields = (
-        "name",
         "team_number",
+        "name",
         "leader__email",
         "leader__first_name",
         "leader__last_name",
@@ -111,7 +111,7 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
 
     fieldsets = (
-        ("Basic Info", {"fields": ("name", "team_number", "description", "leader", "status")}),
+        ("Basic Info", {"fields": ("team_number", "name", "description", "leader", "status")}),
         (
             "Team Details",
             {
@@ -130,15 +130,19 @@ class OnlineTeamAdmin(admin.ModelAdmin):
         """Custom ordering to handle numeric sorting of team_number"""
         ordering = request.GET.get('o', None)
         if ordering == '1' or ordering == '-1':  # team_number column
-            # Cast team_number to integer for proper numeric sorting
-            return ['team_number_int'] if ordering == '1' else ['-team_number_int']
+            # For team_number column, we'll handle numeric sorting in get_queryset
+            return ['team_number'] if ordering == '1' else ['-team_number']
         return super().get_ordering(request)
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(
-            team_number_int=Cast(F('team_number'), IntegerField())
-        )
+        # Check if we're ordering by team_number and apply numeric casting
+        ordering = self.get_ordering(request)
+        if ordering and ('team_number' in ordering[0]):
+            direction = '-' if ordering[0].startswith('-') else ''
+            qs = qs.annotate(team_number_int=Cast(F('team_number'), IntegerField()))
+            qs = qs.order_by(f'{direction}team_number_int')
+        return qs
 
     @admin.display(description="Leader", ordering="leader__email")
     def leader_info(self, obj):
