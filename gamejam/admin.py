@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
+from django.db.models import F
+from django.db.models.functions import Cast
+from django.db.models import IntegerField
 from .models import (
     OnlineCompetition,
     OnlineTeam,
@@ -106,7 +109,6 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     inlines = [OnlineMemberInline]
     actions = ["mark_as_active", "mark_as_attended", "mark_as_completed"]
     date_hierarchy = "created_at"
-    ordering = ("team_number",)
 
     fieldsets = (
         ("Basic Info", {"fields": ("name", "team_number", "description", "leader", "status")}),
@@ -122,6 +124,12 @@ class OnlineTeamAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            team_number_int=Cast(F('team_number'), IntegerField())
+        ).order_by('team_number_int')
 
     @admin.display(description="Leader", ordering="leader__email")
     def leader_info(self, obj):
