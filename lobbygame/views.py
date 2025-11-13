@@ -65,9 +65,7 @@ class LobbygameCreateDiscountView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        winners_count = (
-            LobbygameResult.objects.exclude(request_uuid="status").count()
-        )
+        winners_count = LobbygameResult.objects.exclude(request_uuid="status").count()
 
         if winners_count < 5:
             discount_percentage = 100
