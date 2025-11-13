@@ -134,3 +134,16 @@ def test_create_announcement_view_creates_links_and_clears_session(
 
     # Session token should be cleared after successful handling
     assert session_key not in request.session
+
+
+@pytest.mark.django_db
+def test_changelist_view_marks_selection_context(admin_site, rf, superuser):
+    model_admin = CustomUserAdmin(User, admin_site)
+
+    request = rf.get("/admin/accounts/user/?select_for=announcement&_popup=1")
+    _prepare_request(request, superuser)
+
+    response = model_admin.changelist_view(request)
+
+    assert response.status_code == 200
+    assert response.context_data.get("is_announcement_selection") is True

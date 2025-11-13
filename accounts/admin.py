@@ -4,7 +4,6 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 from .models import User
 from django import forms
 from django.shortcuts import redirect
@@ -306,6 +305,16 @@ class CustomUserAdmin(UserAdmin):
 
     # Admin action: create announcement for selected users
     actions = ["create_announcement_for_selected"]
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        is_selection_view = request.GET.get("_popup") and request.GET.get("select_for") == "announcement"
+        if is_selection_view:
+            extra_context["is_announcement_selection"] = True
+            mutable_get = request.GET.copy()
+            mutable_get.pop("select_for", None)
+            request.GET = mutable_get
+        return super().changelist_view(request, extra_context=extra_context)
 
     def create_announcement_for_selected(self, request, queryset):
         """Redirect to a custom admin view to enter announcement details for the selected users."""

@@ -6,11 +6,12 @@ from .models import Announcement, UserAnnouncement
 
 @admin.register(Announcement)
 class AnnouncementAdmin(admin.ModelAdmin):
+    change_form_template = "admin/announcement/announcement/change_form.html"
     list_display = ("title", "created_at", "user_count", "last_sent")
     search_fields = ("title",)
     inlines = []
     actions = ["resend_emails"]
-
+    
     @admin.display(description="User Count")
     def user_count(self, obj: Announcement) -> int:
         return obj.user_announcements.count()

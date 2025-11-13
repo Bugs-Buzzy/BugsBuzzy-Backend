@@ -1,0 +1,408 @@
+{% extends "admin/change_form.html" %}
+{% load static i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script>
+        (function ($) {
+            var inlineContextCache = null;
+
+            function resolveInlineContext() {
+                if (inlineContextCache) {
+                    return inlineContextCache;
+                }
+
+                var groupElement = document.querySelector(
+                    ".inline-group[id$='userannouncement_set-group'], .inline-group"
+                );
+                if (!groupElement) {
+                    console.warn("[AnnouncementAdmin] Inline group element not found");
+                    return null;
+                }
+
+                var fieldElement = groupElement.querySelector(
+                    "select[name$='-user'], input[name$='-user']"
+                );
+                if (!fieldElement) {
+                    console.warn("[AnnouncementAdmin] Inline user field not found inside group");
+                    return null;
+                }
+
+                var nameAttr = fieldElement.getAttribute("name") || "";
+                var prefixMatch = nameAttr.match(/^(.*?)-\d+-user$/);
+                if (!prefixMatch || !prefixMatch[1]) {
+                    console.warn("[AnnouncementAdmin] Unable to derive inline prefix from field name", {
+                        name: nameAttr,
+                    });
+                    return null;
+                }
+
+                var prefix = prefixMatch[1];
+                var $group = $(groupElement);
+                var $addButton = $group.find(".add-row a").last();
+                if (!$addButton.length) {
+                    console.warn("[AnnouncementAdmin] Add-row button not found inside inline group");
+                }
+
+                var $totalForms = $group.find("input[name$='-TOTAL_FORMS']");
+                inlineContextCache = {
+                    prefix: prefix,
+                    group: $group,
+                    addButton: $addButton,
+                    totalFormsInput: $totalForms,
+                };
+
+                if (window.console && typeof window.console.debug === "function") {
+                    console.debug("[AnnouncementAdmin] Inline context resolved", inlineContextCache);
+                }
+
+                return inlineContextCache;
+            }
+
+            function getInlinePrefix() {
+                var context = resolveInlineContext();
+                return context ? context.prefix : null;
+            }
+
+            function getTotalFormsInput(prefix) {
+                var context = resolveInlineContext();
+                if (context && context.totalFormsInput && context.totalFormsInput.length) {
+                    return context.totalFormsInput;
+                }
+                if (prefix) {
+                    var fallback = $("input[name='" + prefix + "-TOTAL_FORMS']");
+                    if (!fallback.length) {
+                        fallback = $("#id_" + prefix + "-TOTAL_FORMS");
+                    }
+                    if (fallback.length) {
+                        return fallback;
+                    }
+                }
+                console.warn("[AnnouncementAdmin] getTotalFormsInput missing", { prefix: prefix });
+                return $();
+            }
+
+            function getInlineFields() {
+                var context = resolveInlineContext();
+                if (!context || !context.group) {
+                    return $();
+                }
+                return context.group
+                    .find("select[name$='-user'], input[name$='-user']")
+                    .filter(function () {
+                        var nameAttr = this.getAttribute("name") || "";
+                        var isTemplate = nameAttr.indexOf("__prefix__") !== -1;
+                        if (isTemplate) {
+                            console.debug("[AnnouncementAdmin] Skipping template field", {
+                                fieldName: nameAttr,
+                            });
+                        }
+                        return !isTemplate;
+                    });
+            }
+
+            function isFieldAvailable($field) {
+                if (!$field || !$field.length) {
+                    return false;
+                }
+                if ($field.data("announcementSelected")) {
+                    return false;
+                }
+
+                if ($field.prop("readonly") || $field.prop("disabled")) {
+                    return false;
+                }
+
+                if ($field.hasClass("select2-hidden-accessible")) {
+                    var select2Obj = $field.data("select2");
+                    if (!select2Obj) {
+                        return false;
+                    }
+                    var container = $field.nextAll(".select2-container").first();
+                    if (!container.length || container.hasClass("select2-container--disabled")) {
+                        return false;
+                    }
+                    var renderedText = container.find(".select2-selection__rendered").text().trim();
+                    if (renderedText) {
+                        return false;
+                    }
+                }
+
+                var value = $field.val();
+                if (Array.isArray(value)) {
+                    var filtered = value.filter(function (item) {
+                        return item !== null && item !== undefined && String(item).trim() !== "";
+                    });
+                    if (filtered.length) {
+                        return false;
+                    }
+                } else if (!(value === null || value === undefined || String(value).trim() === "")) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            function ensureInlineField(prefix, attemptContext) {
+                var $fields = getInlineFields();
+                    var field = $fields.filter(function () {
+                        return isFieldAvailable($(this));
+                    }).first();
+                if (field.length) {
+                    console.debug("[AnnouncementAdmin] Reusing empty field", {
+                        fieldId: field.attr("id"),
+                        attempt: attemptContext,
+                        select2Ready: Boolean(field.data("select2")),
+                    });
+                    return field;
+                }
+                var context = resolveInlineContext();
+                var $addButton = context && context.addButton && context.addButton.length
+                    ? context.addButton
+                    : $("#" + prefix + "-group .add-row a");
+                if ($addButton.length) {
+                    var totalInput = getTotalFormsInput(prefix);
+                    var previousTotal = parseInt(totalInput.val(), 10);
+                    console.debug("[AnnouncementAdmin] Triggering add-row", {
+                        previousTotal: previousTotal,
+                        attempt: attemptContext,
+                    });
+                    $addButton.trigger("click");
+                }
+                return field;
+            }
+
+            function userAlreadySelected(prefix, userId) {
+                var $fields = getInlineFields();
+                var found = false;
+                var needle = String(userId);
+                $fields.each(function () {
+                    var current = $(this).val();
+                    console.debug("[AnnouncementAdmin] Checking existing field", {
+                        fieldId: $(this).attr("id"),
+                        value: current,
+                        needle: needle,
+                    });
+                    if (Array.isArray(current)) {
+                        if (current.map(String).includes(needle)) {
+                            found = true;
+                            return false;
+                        }
+                    } else if (String(current || "") === needle) {
+                        found = true;
+                        return false;
+                    }
+                });
+                return found;
+            }
+
+            function attachOption($field, item) {
+                if (!$field || !$field.length) {
+                    console.warn("[AnnouncementAdmin] attachOption missing field", { item: item });
+                    return false;
+                }
+                var value = String(item.id);
+                var text = item.text || value;
+                var exists = false;
+                $field.find("option").each(function () {
+                    if ($(this).val() === value) {
+                        exists = true;
+                        return false;
+                    }
+                });
+
+                if (!exists) {
+                    var option = new Option(text, value, true, true);
+                    $field.append(option);
+                    console.debug("[AnnouncementAdmin] Option appended", {
+                        fieldId: $field.attr("id"),
+                        value: value,
+                        text: text,
+                    });
+                }
+
+                $field.val(value);
+                $field.data("announcementSelected", true);
+                $field.attr("data-announcement-selected", "true");
+                $field.trigger("change");
+
+                var select2 = $field.data("select2");
+                if (select2) {
+                    $field.trigger("select2:select", { data: { id: value, text: text } });
+                    $field.trigger("change.select2");
+                }
+
+                if (typeof $field.select2 === "function") {
+                    $field.select2("trigger", "select", { data: { id: value, text: text } });
+                }
+
+                var $select2Container = $field.nextAll(".select2").first();
+                if ($select2Container.length) {
+                    var $rendered = $select2Container.find(".select2-selection__rendered");
+                    if ($rendered.length) {
+                        $rendered.text(text);
+                        $rendered.attr("title", text);
+                        console.debug("[AnnouncementAdmin] Select2 display updated", {
+                            fieldId: $field.attr("id"),
+                            text: text,
+                        });
+                    }
+                }
+
+                console.debug("[AnnouncementAdmin] attachOption complete", {
+                    fieldId: $field.attr("id"),
+                    value: value,
+                });
+                return true;
+            }
+
+            window.dismissUserSelection = function (selected) {
+                if (!Array.isArray(selected) || !selected.length) {
+                    return;
+                }
+
+                if (window.console && typeof window.console.debug === "function") {
+                    console.debug("[AnnouncementAdmin] dismissUserSelection invoked", selected);
+                }
+
+                var prefix = getInlinePrefix();
+                if (!prefix) {
+                    if (window.console && typeof window.console.warn === "function") {
+                        console.warn("[AnnouncementAdmin] Inline prefix not resolved; skipping user insertion.");
+                    }
+                    return;
+                }
+
+                var MAX_ATTEMPTS = 30;
+                var RETRY_DELAY = 120;
+
+                selected.forEach(function (item) {
+                    if (!item || !item.id) {
+                        return;
+                    }
+                    if (userAlreadySelected(prefix, item.id)) {
+                        if (window.console && typeof window.console.info === "function") {
+                            console.info("[AnnouncementAdmin] User already selected, skipping", item.id);
+                        }
+                        return;
+                    }
+
+                    var attempts = 0;
+                    var MAX_ADD_ATTEMPTS = 10;
+
+                    function tryAttach() {
+                        var $field = ensureInlineField(prefix, attempts);
+                        if (!$field || !$field.length) {
+                            if (window.console && typeof window.console.debug === "function") {
+                                console.debug("[AnnouncementAdmin] No inline field available yet, retrying", {
+                                    attempts: attempts,
+                                    prefix: prefix,
+                                });
+                            }
+                            if (attempts < MAX_ATTEMPTS) {
+                                attempts += 1;
+                                var delay = RETRY_DELAY + attempts * 80;
+                                window.setTimeout(tryAttach, delay);
+                            }
+                            return;
+                        }
+
+                        if (
+                            $field.is("select") &&
+                            (!$field.hasClass("select2-hidden-accessible") || !$field.data("select2"))
+                        ) {
+                            if (window.console && typeof window.console.debug === "function") {
+                                console.debug("[AnnouncementAdmin] Select2 not ready, retrying", {
+                                    attempts: attempts,
+                                    prefix: prefix,
+                                    fieldId: $field.attr("id"),
+                                    hasClass: $field.hasClass("select2-hidden-accessible"),
+                                    hasData: Boolean($field.data("select2")),
+                                });
+                            }
+                            if (attempts < MAX_ATTEMPTS) {
+                                attempts += 1;
+                                window.setTimeout(tryAttach, RETRY_DELAY);
+                            }
+                            return;
+                        }
+
+                        if (!attachOption($field, item) && attempts < MAX_ATTEMPTS) {
+                            if (window.console && typeof window.console.debug === "function") {
+                                console.debug("[AnnouncementAdmin] attachOption not ready, retrying", {
+                                    attempts: attempts,
+                                    prefix: prefix,
+                                    fieldId: $field.attr("id"),
+                                });
+                            }
+                            attempts += 1;
+                            window.setTimeout(tryAttach, RETRY_DELAY);
+                            return;
+                        }
+
+                        if (window.console && typeof window.console.debug === "function") {
+                            console.debug("[AnnouncementAdmin] User attached", {
+                                id: item.id,
+                                text: item.text,
+                                prefix: prefix,
+                                fieldId: $field && $field.attr ? $field.attr("id") : null,
+                            });
+                        }
+
+                        // Prepare another blank row for the next selection
+                        var addAttempts = 0;
+                        (function prepareNextSlot() {
+                            var $next = ensureInlineField(prefix, "post-attach-" + addAttempts);
+                            if ($next && $next.length) {
+                                return;
+                            }
+                            if (addAttempts < MAX_ADD_ATTEMPTS) {
+                                addAttempts += 1;
+                                window.setTimeout(prepareNextSlot, 200 + addAttempts * 50);
+                            }
+                        })();
+                    }
+
+                    tryAttach();
+                });
+            };
+
+            function openSelectionPopup(url) {
+                var opts = "height=700,width=960,resizable=yes,scrollbars=yes";
+                window.open(url, "user_selection_popup", opts);
+                console.debug("[AnnouncementAdmin] Opening selection popup", { url: url });
+            }
+
+            $(function () {
+                var $button = $("#open-user-selection");
+                if (!$button.length) {
+                    return;
+                    console.warn("[AnnouncementAdmin] Selection button not found");
+                }
+
+                $button.on("click", function (event) {
+                    event.preventDefault();
+                    var url = $button.data("select-url");
+                    if (!url) {
+                        return;
+                        console.warn("[AnnouncementAdmin] select-url data attribute missing");
+                    }
+                    openSelectionPopup(url);
+                });
+            });
+        })(django.jQuery);
+    </script>
+{% endblock %}
+
+{% block inline_field_sets %}
+    {{ block.super }}
+    <div class="submit-row" id="user-selection-tools">
+        <button type="button"
+                class="button"
+				style="padding: 6px 12px !important;"
+                id="open-user-selection"
+                data-select-url="{% url 'admin:accounts_user_changelist' %}?_popup=1&select_for=announcement">
+            {% trans "Select users…" %}
+        </button>
+    </div>
+{% endblock %}

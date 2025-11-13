@@ -1,0 +1,464 @@
+{% extends "admin/change_list.html" %}
+{% load static i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% if is_announcement_selection %}
+        <style>
+			.button {
+				padding: 6px 12px !important;
+			}
+            .announcement-selection-toolbar {
+                position: sticky;
+                top: 0;
+                background: var(--body-bg, #f9f9f9);
+                z-index: 20;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--hairline-color, #e5e5e5);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .announcement-selection-toolbar .selection-count {
+                font-weight: 600;
+            }
+            .announcement-select-all {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-inline-start: auto;
+                font-size: 0.95rem;
+            }
+            tr.announcement-selected {
+                background: rgba(57, 132, 239, 0.12);
+            }
+            .announcement-checkbox-wrapper {
+                display: inline-flex;
+                align-items: center;
+                margin-right: 0.5rem;
+            }
+            .announcement-checkbox {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+                accent-color: rgb(57, 132, 239);
+            }
+            .results tbody tr th:first-child,
+            .results tbody tr td:first-child {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+        </style>
+        <script>
+            window.addEventListener("DOMContentLoaded", function () {
+                console.debug("[AnnouncementPopup] DOMContentLoaded fired");
+                if (!window.opener || typeof window.opener.dismissUserSelection !== "function") {
+                    console.warn("[AnnouncementPopup] opener missing or dismissUserSelection unavailable", {
+                        hasOpener: Boolean(window.opener),
+                        hasDismiss: window.opener && typeof window.opener.dismissUserSelection,
+                    });
+                    return;
+                }
+
+                if (!window.name || !window.name.startsWith("announcement_popup_")) {
+                    window.name = "announcement_popup_" + Math.random().toString(36).slice(2);
+                }
+
+                var STORAGE_KEY = "announcement_popup_selection_" + window.name;
+
+                function loadStoredSelection() {
+                    try {
+                        var raw = sessionStorage.getItem(STORAGE_KEY);
+                        if (!raw) {
+                            return [];
+                        }
+                        var parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            return parsed;
+                        }
+                        return [];
+                    } catch (error) {
+                        console.warn("[AnnouncementPopup] Failed to parse stored selection", error);
+                        return [];
+                    }
+                }
+
+                function persistSelection(ids) {
+                    try {
+                        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
+                    } catch (error) {
+                        console.warn("[AnnouncementPopup] Failed to persist selection", error);
+                    }
+                }
+
+                var selectedIds = new Set(loadStoredSelection().map(String));
+
+                var preservedParamKeys = ["select_for", "_popup"];
+                var urlParams = new URLSearchParams(window.location.search);
+                var preservedParams = {};
+                preservedParamKeys.forEach(function (key) {
+                    if (urlParams.has(key)) {
+                        preservedParams[key] = urlParams.get(key);
+                    }
+                });
+
+                function ensureHiddenInput(form, name, value) {
+                    if (!form || !name || value === undefined || value === null) {
+                        return;
+                    }
+                    var existing = form.querySelector('input[name="' + name + '"]');
+                    if (!existing) {
+                        existing = document.createElement("input");
+                        existing.type = "hidden";
+                        existing.name = name;
+                        form.appendChild(existing);
+                    }
+                    existing.value = value;
+                }
+
+                function augmentForm(form) {
+                    if (!form) {
+                        return;
+                    }
+                    Object.keys(preservedParams).forEach(function (key) {
+                        ensureHiddenInput(form, key, preservedParams[key]);
+                    });
+                }
+
+                function augmentHref(href) {
+                    if (!href) {
+                        return href;
+                    }
+                    try {
+                        var url = new URL(href, window.location.href);
+                        if (url.origin !== window.location.origin) {
+                            return href;
+                        }
+                        Object.keys(preservedParams).forEach(function (key) {
+                            url.searchParams.set(key, preservedParams[key]);
+                        });
+                        var normalized = url.pathname + url.search + url.hash;
+                        return normalized;
+                    } catch (error) {
+                        return href;
+                    }
+                }
+
+                augmentForm(document.getElementById("changelist-form"));
+                augmentForm(document.getElementById("changelist-search"));
+
+                var actionForm = document.querySelector("#changelist-form form");
+                if (actionForm) {
+                    augmentForm(actionForm);
+                }
+
+                document.querySelectorAll("#changelist a, .paginator a, .pagination a").forEach(function (link) {
+                    var updated = augmentHref(link.getAttribute("href"));
+                    if (updated) {
+                        link.setAttribute("href", updated);
+                    }
+                });
+
+                document.querySelectorAll("form[action]").forEach(function (form) {
+                    var updatedAction = augmentHref(form.getAttribute("action"));
+                    if (updatedAction) {
+                        form.setAttribute("action", updatedAction);
+                    }
+                });
+
+                var rows = Array.from(document.querySelectorAll(".results tbody tr"));
+                var selectAllCheckbox = document.getElementById("announcement-select-all");
+                console.debug("[AnnouncementPopup] Initial rows detected", { rows: rows.length });
+                if (!rows.length) {
+                    console.warn("[AnnouncementPopup] No rows detected inside popup");
+                    return;
+                }
+
+                function getRowId(row) {
+                    var direct = row.dataset.objectPk || row.getAttribute("data-object-id") || row.getAttribute("data-object-pk");
+                    if (direct) {
+                        return direct;
+                    }
+
+                    var link = row.querySelector("th a, td a");
+                    if (!link) {
+                        return null;
+                    }
+
+                    var href = link.getAttribute("href") || "";
+                    try {
+                        var url = new URL(href, window.location.origin);
+                        var pathSegments = url.pathname.split("/").filter(Boolean);
+                        var changeIndex = pathSegments.lastIndexOf("change");
+                        if (changeIndex > 0) {
+                            var candidate = pathSegments[changeIndex - 1];
+                            if (candidate) {
+                                row.dataset.objectPk = candidate;
+                                return candidate;
+                            }
+                        }
+
+                        var searchParams = url.searchParams;
+                        var paramId = searchParams.get("id") || searchParams.get("pk") || searchParams.get("user");
+                        if (paramId) {
+                            row.dataset.objectPk = paramId;
+                            return paramId;
+                        }
+                    } catch (error) {
+                        var looseMatch = href.match(/([^/?#]+)\/change\/?$/);
+                        if (looseMatch && looseMatch[1]) {
+                            row.dataset.objectPk = looseMatch[1];
+                            return looseMatch[1];
+                        }
+                    }
+
+                    return null;
+                }
+
+                function getRowLabel(row) {
+                    var labelElement = row.querySelector(".field-email, .field-normalized_email, th a, td a");
+                    if (labelElement) {
+                        return labelElement.textContent.trim();
+                    }
+                    return getRowId(row) || "";
+                }
+
+                function updateCount() {
+                    var countEl = document.getElementById("announcement-selection-count");
+                    if (countEl) {
+                        countEl.textContent = getSelectedRows().length;
+                    }
+                    console.debug("[AnnouncementPopup] Selection count updated", {
+                        count: getSelectedRows().length,
+                    });
+                }
+
+                function getSelectedRows() {
+                    return rows.filter(function (row) {
+                        return row.classList.contains("announcement-selected");
+                    });
+                }
+
+                function syncSelectAllState() {
+                    if (!selectAllCheckbox) {
+                        return;
+                    }
+                    var total = rows.length;
+                    if (!total) {
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = false;
+                        return;
+                    }
+                    var selectedCount = getSelectedRows().length;
+                    selectAllCheckbox.checked = selectedCount === total;
+                    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < total;
+                    console.debug("[AnnouncementPopup] SelectAll sync", {
+                        selectedCount: selectedCount,
+                        total: total,
+                        checked: selectAllCheckbox.checked,
+                        indeterminate: selectAllCheckbox.indeterminate,
+                    });
+                }
+
+                function toggleRow(row, selected, skipPersist) {
+                    row.classList.toggle("announcement-selected", selected);
+                    var checkbox = row.querySelector("input.announcement-checkbox");
+                    if (checkbox && checkbox.checked !== selected) {
+                        checkbox.checked = selected;
+                    }
+                    var rowId = getRowId(row);
+                    if (rowId) {
+                        if (selected) {
+                            selectedIds.add(String(rowId));
+                        } else {
+                            selectedIds.delete(String(rowId));
+                        }
+                        if (!skipPersist) {
+                            persistSelection(selectedIds);
+                        }
+                    }
+                    updateCount();
+                    syncSelectAllState();
+                    console.debug("[AnnouncementPopup] Row toggled", {
+                        id: getRowId(row),
+                        selected: selected,
+                    });
+                }
+
+                function ensureCheckbox(row) {
+                    if (row.querySelector("input.announcement-checkbox")) {
+                        console.debug("[AnnouncementPopup] Checkbox already present", {
+                            id: getRowId(row),
+                        });
+                        return;
+                    }
+
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.className = "announcement-checkbox";
+                    checkbox.addEventListener("change", function (event) {
+                        event.stopPropagation();
+                        toggleRow(row, checkbox.checked);
+                    });
+
+                    var firstCell = row.querySelector("th, td");
+                    if (firstCell) {
+                        var wrapper = document.createElement("span");
+                        wrapper.className = "announcement-checkbox-wrapper";
+                        wrapper.appendChild(checkbox);
+                        firstCell.prepend(wrapper);
+                    } else {
+                        row.prepend(checkbox);
+                    }
+                    console.debug("[AnnouncementPopup] Checkbox injected", {
+                        id: getRowId(row),
+                    });
+                }
+
+                rows.forEach(function (row) {
+                    ensureCheckbox(row);
+                    var rowId = getRowId(row);
+                    if (!rowId) {
+                        return;
+                    }
+
+                    row.addEventListener("click", function (event) {
+                        if (event.target.tagName === "A") {
+                            return;
+                        }
+                        var currentlySelected = row.classList.contains("announcement-selected");
+                        toggleRow(row, !currentlySelected);
+                    });
+                });
+
+                updateCount();
+                syncSelectAllState();
+                console.debug("[AnnouncementPopup] Initial sync complete");
+
+                // Restore persisted selections if present
+                if (selectedIds.size) {
+                    rows.forEach(function (row) {
+                        var id = getRowId(row);
+                        if (id && selectedIds.has(String(id))) {
+                            toggleRow(row, true, true);
+                        }
+                    });
+                    updateCount();
+                    syncSelectAllState();
+                    console.debug("[AnnouncementPopup] Restored persisted selections", {
+                        ids: Array.from(selectedIds),
+                    });
+                } else {
+                    persistSelection(selectedIds);
+                }
+
+                var applyButton = document.getElementById("announcement-apply-selection");
+                if (applyButton) {
+                    applyButton.addEventListener("click", function () {
+                        var selections = getSelectedRows()
+                            .map(function (row) {
+                                return {
+                                    id: getRowId(row),
+                                    text: getRowLabel(row),
+                                };
+                            })
+                            .filter(function (item) {
+                                return item.id;
+                            });
+
+                        if (!selections.length) {
+                            console.warn("[AnnouncementPopup] Apply clicked with no selections");
+                            window.alert("هیچ کاربری انتخاب نشده است.");
+                            return;
+                        }
+
+                        console.debug("[AnnouncementPopup] Applying selection", selections);
+                        sessionStorage.removeItem(STORAGE_KEY);
+                        selectedIds.clear();
+                        window.opener.dismissUserSelection(selections);
+                        window.close();
+                    });
+                }
+
+                var clearButton = document.getElementById("announcement-clear-selection");
+                if (clearButton) {
+                    clearButton.addEventListener("click", function () {
+                        rows.forEach(function (row) {
+                            toggleRow(row, false);
+                        });
+                        console.debug("[AnnouncementPopup] Clear clicked");
+                        if (selectAllCheckbox) {
+                            selectAllCheckbox.checked = false;
+                            selectAllCheckbox.indeterminate = false;
+                        }
+                        selectedIds.clear();
+                        persistSelection(selectedIds);
+                    });
+                }
+
+                var cancelButton = document.getElementById("announcement-cancel-selection");
+                if (cancelButton) {
+                    cancelButton.addEventListener("click", function () {
+                        console.debug("[AnnouncementPopup] Cancel clicked");
+                        sessionStorage.removeItem(STORAGE_KEY);
+                        selectedIds.clear();
+                        window.close();
+                    });
+                }
+
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener("change", function () {
+                        var selectAll = Boolean(selectAllCheckbox.checked);
+                        console.debug("[AnnouncementPopup] SelectAll toggled", {
+                            selectAll: selectAll,
+                        });
+                        rows.forEach(function (row) {
+                            var rowId = getRowId(row);
+                            if (!rowId) {
+                                return;
+                            }
+                            toggleRow(row, selectAll);
+                        });
+                        if (!selectAll) {
+                            selectAllCheckbox.indeterminate = false;
+                        }
+                        if (!selectAll) {
+                            selectedIds.clear();
+                            persistSelection(selectedIds);
+                        }
+                    });
+                }
+
+                window.addEventListener("beforeunload", function () {
+                    if (!selectedIds.size) {
+                        sessionStorage.removeItem(STORAGE_KEY);
+                    }
+                });
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block result_list %}
+    {% if is_announcement_selection %}
+        <div class="announcement-selection-toolbar">
+            <button type="button" class="button" id="announcement-apply-selection">
+                {% trans "Add selected users" %}
+            </button>
+            <button type="button" class="button" id="announcement-clear-selection">
+                {% trans "Clear" %}
+            </button>
+            <button type="button" class="button" id="announcement-cancel-selection">
+                {% trans "Cancel" %}
+            </button>
+            <label class="announcement-select-all" for="announcement-select-all">
+                <input type="checkbox" class="announcement-checkbox" id="announcement-select-all">
+                {% trans "Select all" %}
+            </label>
+            <span class="selection-count" id="announcement-selection-count">0</span>
+        </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}
