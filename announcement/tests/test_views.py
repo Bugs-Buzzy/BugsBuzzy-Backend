@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -29,6 +30,12 @@ def announcement(db):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_my_announcements_requires_authentication(api_client):
     url = reverse("my_announcements")
     response = api_client.get(url)
@@ -40,6 +47,12 @@ def test_my_announcements_requires_authentication(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_my_announcements_returns_serialized_data(api_client, user, announcement):
     api_client.force_authenticate(user=user)
 
