@@ -1,30 +1,31 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from typing import List, Dict, Any
 from .models import InPersonTeam, InPersonMember, InPersonCompetition, InPersonSubmission
 
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class InPersonUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "email", "first_name", "last_name"]
 
 
 class InPersonMemberSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = InPersonUserSerializer(read_only=True)
     has_paid = serializers.SerializerMethodField()
 
     class Meta:
         model = InPersonMember
         fields = ["id", "user", "has_paid", "joined_at"]
 
-    def get_has_paid(self, obj):
+    def get_has_paid(self, obj: InPersonMember) -> bool:
         return obj.user.has_paid
 
 
 class InPersonTeamSerializer(serializers.ModelSerializer):
-    leader = UserSerializer(read_only=True)
+    leader = InPersonUserSerializer(read_only=True)
     members = InPersonMemberSerializer(many=True, read_only=True)
     member_count = serializers.SerializerMethodField()
     is_leader = serializers.SerializerMethodField()
@@ -47,17 +48,17 @@ class InPersonTeamSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["invite_code", "team_number", "created_at"]
 
-    def get_member_count(self, obj):
+    def get_member_count(self, obj: InPersonTeam) -> int:
         return obj.member_count
 
-    def get_is_leader(self, obj):
+    def get_is_leader(self, obj: InPersonTeam) -> bool:
         request = self.context.get("request")
         return request and request.user == obj.leader
 
 
 class InPersonSubmissionSerializer(serializers.ModelSerializer):
     team = InPersonTeamSerializer(read_only=True)
-    submitted_by = UserSerializer(read_only=True)
+    submitted_by = InPersonUserSerializer(read_only=True)
     is_final = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -93,7 +94,7 @@ class InPersonCompetitionSerializer(serializers.ModelSerializer):
         model = InPersonCompetition
         fields = ["phases"]
 
-    def get_phases(self, obj):
+    def get_phases(self, obj: InPersonCompetition) -> List[Dict[str, Any]]:
         return [
             {
                 "id": 0,
@@ -136,3 +137,37 @@ class InPersonCompetitionSerializer(serializers.ModelSerializer):
                 "end": obj.phase_4_end,
             },
         ]
+
+
+class InPersonTeamCreateSerializer(serializers.Serializer):
+    """Serializer for creating a team"""
+    name = serializers.CharField(required=True, max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True)
+
+
+class InPersonTeamJoinSerializer(serializers.Serializer):
+    """Serializer for joining a team"""
+    invite_code = serializers.CharField(required=True)
+
+
+class InPersonTeamUpdateSerializer(serializers.Serializer):
+    """Serializer for updating team info"""
+    name = serializers.CharField(required=False, max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True)
+    avatar = serializers.CharField(required=False, allow_blank=True)
+
+
+class InPersonVerifyTeamCodeSerializer(serializers.Serializer):
+    """Serializer for verifying team code"""
+    code = serializers.CharField(required=True)
+
+
+class InPersonSubmissionCreateSerializer(serializers.Serializer):
+    """Serializer for creating a submission"""
+    phase = serializers.IntegerField(required=True)
+    content = serializers.CharField(required=True)
+
+
+class TeamNumberSerializer(serializers.Serializer):
+    """Serializer for getting team by number"""
+    team_number = serializers.IntegerField(required=True)

@@ -7,6 +7,7 @@ from .serializers import UserAnnouncementSerializer
 
 class MyAnnouncementsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserAnnouncementSerializer
 
     def get(self, request):
         user_announcements = (

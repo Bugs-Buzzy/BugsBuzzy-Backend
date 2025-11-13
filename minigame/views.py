@@ -67,6 +67,7 @@ class MinigameStatusView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = MinigameResultSerializer
 
     def get(self, request):
         user = request.user
@@ -94,6 +95,7 @@ class MinigameSubmitView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = MinigameSubmissionSerializer
 
     def post(self, request):
         user = request.user

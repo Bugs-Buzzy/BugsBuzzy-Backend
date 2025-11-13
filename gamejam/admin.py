@@ -109,12 +109,11 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     ordering = ("team_number",)
 
     fieldsets = (
-        ("Basic Info", {"fields": ("name", "description", "leader", "status")}),
+        ("Basic Info", {"fields": ("name", "team_number", "description", "leader", "status")}),
         (
             "Team Details",
             {
                 "fields": (
-                    "team_number",
                     "invite_code",
                     "member_count_display",
                     "created_at",
@@ -214,6 +213,7 @@ class OnlineMemberAdmin(admin.ModelAdmin):
 @admin.register(OnlineSubmission)
 class OnlineSubmissionAdmin(admin.ModelAdmin):
     list_display = (
+        "team__team_number",
         "team",
         "submitted_by",
         "phase_display",

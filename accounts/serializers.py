@@ -255,3 +255,53 @@ class ProfileSerializer(serializers.ModelSerializer):
         if bool(re.match(r"^[\u0621-\u0651\u066B-\u06CC\u200c\s]+$", value)):
             return value
         raise serializers.ValidationError("Last name should be in persian.")
+
+
+class CheckEmailSerializer(serializers.Serializer):
+    """Serializer for checking if email exists"""
+    email = serializers.EmailField(required=True)
+
+
+class SendCodeSerializer(serializers.Serializer):
+    """Serializer for sending verification code"""
+    email = serializers.EmailField(required=True)
+
+
+class VerifyCodeSerializer(serializers.Serializer):
+    """Serializer for verifying email code"""
+    email = serializers.EmailField(required=True)
+    verification_code = serializers.CharField(max_length=6, min_length=6, required=True)
+    password = serializers.CharField(write_only=True, required=False)
+
+    def validate_verification_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Verification code must contain only digits.")
+        return value
+
+
+class LoginSerializer(serializers.Serializer):
+    """Serializer for user login"""
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    """Serializer for forgot password"""
+    email = serializers.EmailField(required=True)
+    verification_code = serializers.CharField(max_length=6, min_length=6, required=True)
+
+    def validate_verification_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Verification code must contain only digits.")
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for changing password"""
+    current_password = serializers.CharField(write_only=True, required=False)
+    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+
+
+class TokenRefreshSerializer(serializers.Serializer):
+    """Serializer for token refresh"""
+    refresh = serializers.CharField(required=True)

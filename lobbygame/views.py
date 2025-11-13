@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import LobbygameResult
-from .serializers import LobbygameResultSerializer
+from .serializers import LobbygameResultSerializer, LobbygameSubmissionSerializer
 from payments.models import DiscountCode
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class LobbygameStatusView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = LobbygameResultSerializer
 
     def get(self, request):
         result, _ = LobbygameResult.objects.get_or_create(
@@ -32,6 +33,7 @@ class LobbygameGetDiscount(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = LobbygameResultSerializer
 
     def get(self, request, uuid):
         result = get_object_or_404(LobbygameResult, request_uuid=uuid)
@@ -48,6 +50,7 @@ class LobbygameCreateDiscountView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = LobbygameSubmissionSerializer
 
     def post(self, request, uuid):
         existing = LobbygameResult.get_or_none(uuid)
