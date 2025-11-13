@@ -124,12 +124,21 @@ class OnlineTeamAdmin(admin.ModelAdmin):
             },
         ),
     )
-
+    ordering = ['id']  # Default ordering by id
+    
+    def get_ordering(self, request):
+        """Custom ordering to handle numeric sorting of team_number"""
+        ordering = request.GET.get('o', None)
+        if ordering == '1' or ordering == '-1':  # team_number column
+            # Cast team_number to integer for proper numeric sorting
+            return ['team_number_int'] if ordering == '1' else ['-team_number_int']
+        return super().get_ordering(request)
+    
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
             team_number_int=Cast(F('team_number'), IntegerField())
-        ).order_by('team_number_int')
+        )
 
     @admin.display(description="Leader", ordering="leader__email")
     def leader_info(self, obj):
