@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -29,6 +30,12 @@ def verified_user(db):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_check_email_requires_email(api_client):
     url = reverse("check_email")
     response = api_client.post(url, {}, format="json")
@@ -38,6 +45,12 @@ def test_check_email_requires_email(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_check_email_validates_format(api_client):
     url = reverse("check_email")
     response = api_client.post(url, {"email": "invalid"}, format="json")
@@ -47,6 +60,12 @@ def test_check_email_validates_format(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_check_email_returns_existing_user_info(api_client):
     user = User.objects.create_user(email="exists@example.com", password="pass1234")
     url = reverse("check_email")
@@ -58,6 +77,12 @@ def test_check_email_returns_existing_user_info(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_send_code_rejects_invalid_email_format(api_client):
     url = reverse("send_code")
     response = api_client.post(url, {"email": "bad"}, format="json")
@@ -67,6 +92,12 @@ def test_send_code_rejects_invalid_email_format(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_send_code_rate_limits_after_three_attempts(api_client):
     user = User.objects.create_user(email="repeat@example.com")
     user.verification_code = 123456
@@ -81,6 +112,12 @@ def test_send_code_rate_limits_after_three_attempts(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_verify_code_requires_fields(api_client):
     url = reverse("verify_code")
     response = api_client.post(url, {"email": "user@example.com"}, format="json")
@@ -89,6 +126,12 @@ def test_verify_code_requires_fields(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_verify_code_rejects_expired_code(api_client):
     user = User.objects.create_user(email="expired@example.com")
     user.verification_code = 123456
@@ -107,6 +150,12 @@ def test_verify_code_rejects_expired_code(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_verify_code_rejects_wrong_code(api_client):
     user = User.objects.create_user(email="wrong@example.com")
     user.verification_code = 123456
@@ -125,6 +174,12 @@ def test_verify_code_rejects_wrong_code(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_login_requires_email_and_password(api_client):
     url = reverse("login")
     response = api_client.post(url, {"email": ""}, format="json")
@@ -133,6 +188,12 @@ def test_login_requires_email_and_password(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_login_rejects_invalid_credentials(api_client):
     User.objects.create_user(email="login@example.com", password="pass1234")
     url = reverse("login")
@@ -146,6 +207,12 @@ def test_login_rejects_invalid_credentials(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_login_rejects_inactive_user(api_client):
     user = User.objects.create_user(email="inactive@example.com", password="pass1234")
     user.is_active = False
@@ -162,6 +229,12 @@ def test_login_rejects_inactive_user(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_profile_get_returns_data(api_client, verified_user):
     token = RefreshToken.for_user(verified_user)
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -174,6 +247,12 @@ def test_profile_get_returns_data(api_client, verified_user):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_forgot_password_requires_valid_code(api_client):
     user = User.objects.create_user(email="forgot@example.com")
     user.verification_code = 123456
@@ -192,6 +271,12 @@ def test_forgot_password_requires_valid_code(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_forgot_password_rejects_expired_code(api_client):
     user = User.objects.create_user(email="late@example.com")
     user.verification_code = 123456
@@ -210,6 +295,12 @@ def test_forgot_password_rejects_expired_code(api_client):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_change_password_requires_new_password(api_client, verified_user):
     token = RefreshToken.for_user(verified_user)
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -222,6 +313,12 @@ def test_change_password_requires_new_password(api_client, verified_user):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_change_password_requires_current_when_usable(api_client, verified_user):
     verified_user.set_password("oldpass123")
     verified_user.save()
@@ -237,6 +334,12 @@ def test_change_password_requires_current_when_usable(api_client, verified_user)
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_change_password_rejects_wrong_current(api_client, verified_user):
     verified_user.set_password("oldpass123")
     verified_user.save()
@@ -256,6 +359,12 @@ def test_change_password_rejects_wrong_current(api_client, verified_user):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_token_refresh_returns_new_token(api_client, verified_user):
     refresh = RefreshToken.for_user(verified_user)
     url = reverse("token_refresh")
@@ -266,6 +375,12 @@ def test_token_refresh_returns_new_token(api_client, verified_user):
 
 
 @pytest.mark.django_db
+@override_settings(
+    APPEND_SLASH=False,
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    SECURE_PROXY_SSL_HEADER=None,
+)
 def test_token_refresh_rejects_invalid_token(api_client):
     url = reverse("token_refresh")
     response = api_client.post(url, {"refresh": "invalid"}, format="json")
