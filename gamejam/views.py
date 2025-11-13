@@ -331,6 +331,7 @@ class VerifyTeamCodeView(APIView):
                 "team": {
                     "id": team.id,
                     "name": team.name,
+                    "team_number": team.team_number,
                     "leader": {
                         "email": team.leader.email,
                         "first_name": team.leader.first_name,

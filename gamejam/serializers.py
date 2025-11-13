@@ -29,6 +29,7 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "team_number",
             "description",
             "avatar",
             "status",
@@ -38,7 +39,7 @@ class OnlineTeamSerializer(serializers.ModelSerializer):
             "member_count",
             "created_at",
         ]
-        read_only_fields = ["invite_code", "status", "created_at"]
+        read_only_fields = ["invite_code", "status", "created_at", "team_number"]
 
     def get_member_count(self, obj):
         return obj.member_count
