@@ -106,6 +106,7 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     inlines = [OnlineMemberInline]
     actions = ["mark_as_active", "mark_as_attended", "mark_as_completed"]
     date_hierarchy = "created_at"
+    ordering = ("team_number",)
 
     fieldsets = (
         ("Basic Info", {"fields": ("name", "description", "leader", "status")}),
