@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.db.models import Case
 from django.db.models import Count
-from django.db.models import F
-from django.db.models.functions import Cast
 from django.db.models import IntegerField
+from django.db.models import Value
+from django.db.models import When
+from django.db.models.functions import Cast
 from .models import (
     OnlineCompetition,
     OnlineTeam,
@@ -82,7 +84,7 @@ class TeamSizeFilter(admin.SimpleListFilter):
 @admin.register(OnlineTeam)
 class OnlineTeamAdmin(admin.ModelAdmin):
     list_display = (
-        "team_number",
+        "team_number_display",
         "name",
         "leader_info",
         "status_display",
@@ -124,19 +126,24 @@ class OnlineTeamAdmin(admin.ModelAdmin):
             },
         ),
     )
-    ordering = ['id']  # Default ordering by id
-    
+    ordering = ["id"]  # Default ordering by id
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # Check if ordering by team_number column (column index 1)
-        ordering = request.GET.get('o', None)
-        if ordering == '1':  # team_number ascending
-            qs = qs.annotate(team_number_int=Cast(F('team_number'), IntegerField()))
-            qs = qs.order_by('team_number_int')
-        elif ordering == '-1':  # team_number descending  
-            qs = qs.annotate(team_number_int=Cast(F('team_number'), IntegerField()))
-            qs = qs.order_by('-team_number_int')
-        return qs
+        return qs.annotate(
+            team_number_numeric=Case(
+                When(
+                    team_number__regex=r"^\d+$",
+                    then=Cast("team_number", IntegerField()),
+                ),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+    @admin.display(description="Team #", ordering="team_number_numeric")
+    def team_number_display(self, obj):
+        return obj.team_number or "-"
 
     @admin.display(description="Leader", ordering="leader__email")
     def leader_info(self, obj):
