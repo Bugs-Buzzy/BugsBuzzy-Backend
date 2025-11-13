@@ -83,7 +83,9 @@ def test_create_announcement_action_stores_all_selected_users(admin_site, rf, su
 
 
 @pytest.mark.django_db(transaction=True)
-def test_create_announcement_view_creates_links_and_clears_session(admin_site, rf, superuser, monkeypatch):
+def test_create_announcement_view_creates_links_and_clears_session(
+    admin_site, rf, superuser, monkeypatch
+):
     model_admin = CustomUserAdmin(User, admin_site)
 
     users = [

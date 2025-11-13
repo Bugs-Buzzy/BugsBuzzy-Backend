@@ -59,7 +59,9 @@ def _attach_request_state(request, staff_user):
 
 
 @pytest.mark.django_db
-def test_announcement_admin_resend_emails(monkeypatch, rf, admin_site, staff_user, announcement, user):
+def test_announcement_admin_resend_emails(
+    monkeypatch, rf, admin_site, staff_user, announcement, user
+):
     ua = UserAnnouncement.objects.create(user=user, announcement=announcement)
 
     sent = []
@@ -81,7 +83,9 @@ def test_announcement_admin_resend_emails(monkeypatch, rf, admin_site, staff_use
 
 
 @pytest.mark.django_db
-def test_user_announcement_admin_send_selected(monkeypatch, rf, admin_site, staff_user, announcement, user):
+def test_user_announcement_admin_send_selected(
+    monkeypatch, rf, admin_site, staff_user, announcement, user
+):
     ua = UserAnnouncement.objects.create(user=user, announcement=announcement)
 
     calls = []
@@ -102,7 +106,9 @@ def test_user_announcement_admin_send_selected(monkeypatch, rf, admin_site, staf
 
 
 @pytest.mark.django_db
-def test_user_announcement_admin_force_resend(monkeypatch, rf, admin_site, staff_user, announcement, user):
+def test_user_announcement_admin_force_resend(
+    monkeypatch, rf, admin_site, staff_user, announcement, user
+):
     ua = UserAnnouncement.objects.create(user=user, announcement=announcement)
 
     calls = []

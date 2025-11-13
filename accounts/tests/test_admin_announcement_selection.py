@@ -51,7 +51,9 @@ def build_admin_request(path, method="get", data=None):
 def test_selection_token_persists_more_than_limit(admin_user):
     users = User.objects.bulk_create(
         [
-            User(email=f"user{i}@example.com", normalized_email=f"user{i}@example.com", password="!")
+            User(
+                email=f"user{i}@example.com", normalized_email=f"user{i}@example.com", password="!"
+            )
             for i in range(150)
         ]
     )
@@ -78,11 +80,14 @@ def test_selection_token_persists_more_than_limit(admin_user):
     assert len(request.session[session_key]) == 150
     assert request.session.modified is True
 
+
 @pytest.mark.django_db
 def test_create_announcement_view_uses_session_ids(admin_user):
     users = User.objects.bulk_create(
         [
-            User(email=f"user{i}@example.com", normalized_email=f"user{i}@example.com", password="!")
+            User(
+                email=f"user{i}@example.com", normalized_email=f"user{i}@example.com", password="!"
+            )
             for i in range(105)
         ]
     )
