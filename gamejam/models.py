@@ -20,6 +20,13 @@ class OnlineTeam(models.Model):
     ]
 
     name = models.CharField(max_length=128)
+    team_number = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Unique team number for identification",
+    )
     description = models.TextField(null=True, blank=True)
     avatar = models.TextField(blank=True, help_text="Base64 data URI for team avatar (max 256x256)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="inactive")
@@ -35,7 +42,8 @@ class OnlineTeam(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.name} (Leader: {self.leader.email})"
+        number = f" #{self.team_number}" if self.team_number else ""
+        return f"{self.name}{number} (Leader: {self.leader.email})"
 
     def generate_invite_code(self):
         while True:

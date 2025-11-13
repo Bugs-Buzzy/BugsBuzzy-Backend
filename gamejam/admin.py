@@ -80,6 +80,7 @@ class TeamSizeFilter(admin.SimpleListFilter):
 class OnlineTeamAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "team_number",
         "leader_info",
         "status_display",
         "member_count_display",
@@ -89,12 +90,19 @@ class OnlineTeamAdmin(admin.ModelAdmin):
     list_filter = ("status", TeamSizeFilter, "created_at")
     search_fields = (
         "name",
+        "team_number",
         "leader__email",
         "leader__first_name",
         "leader__last_name",
         "invite_code",
     )
-    readonly_fields = ("invite_code", "created_at", "updated_at", "member_count_display")
+    readonly_fields = (
+        "team_number",
+        "invite_code",
+        "created_at",
+        "updated_at",
+        "member_count_display",
+    )
     inlines = [OnlineMemberInline]
     actions = ["mark_as_active", "mark_as_attended", "mark_as_completed"]
     date_hierarchy = "created_at"
@@ -103,7 +111,15 @@ class OnlineTeamAdmin(admin.ModelAdmin):
         ("Basic Info", {"fields": ("name", "description", "leader", "status")}),
         (
             "Team Details",
-            {"fields": ("invite_code", "member_count_display", "created_at", "updated_at")},
+            {
+                "fields": (
+                    "team_number",
+                    "invite_code",
+                    "member_count_display",
+                    "created_at",
+                    "updated_at",
+                )
+            },
         ),
     )
 
