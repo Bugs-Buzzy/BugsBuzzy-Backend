@@ -8,6 +8,13 @@ from .serializers import (
     ProfileSerializer,
     ProfileRetrieveSerializer,
     VerificationCodeSerializer,
+    CheckEmailSerializer,
+    SendCodeSerializer,
+    VerifyCodeSerializer,
+    LoginSerializer,
+    ForgotPasswordSerializer,
+    ChangePasswordSerializer,
+    TokenRefreshSerializer,
 )
 from .utils import send_verification_email, generate_verification_code, normalize_email
 from .throttling import CheckEmailThrottle
@@ -29,6 +36,7 @@ class CheckEmailView(APIView):
 
     permission_classes = [AllowAny]
     throttle_classes = [CheckEmailThrottle]
+    serializer_class = CheckEmailSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -67,6 +75,7 @@ class SendCodeView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = SendCodeSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -132,6 +141,7 @@ class VerifyCodeView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = VerifyCodeSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -198,6 +208,7 @@ class LoginView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -245,6 +256,7 @@ class LoginView(APIView):
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated, IsVerified]
+    serializer_class = ProfileSerializer
 
     def get(self, request):
         serializer = ProfileRetrieveSerializer(request.user)
@@ -267,6 +279,7 @@ class ForgotPasswordView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = ForgotPasswordSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -329,6 +342,7 @@ class ForgotPasswordView(APIView):
 
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated, IsVerified]
+    serializer_class = ChangePasswordSerializer
 
     def post(self, request):
         user = request.user
@@ -367,6 +381,7 @@ class ChangePasswordView(APIView):
 
 class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = TokenRefreshSerializer
 
     def post(self, request):
         refresh_token = request.data.get("refresh")

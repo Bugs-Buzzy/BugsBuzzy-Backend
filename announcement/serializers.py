@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import Announcement, UserAnnouncement
 
 
@@ -23,7 +24,7 @@ class UserAnnouncementSerializer(serializers.ModelSerializer):
             "status",
         ]
 
-    def get_status(self, obj):
+    def get_status(self, obj: UserAnnouncement) -> str:
         if obj.email_sent_at:
             return "sent"
         if obj.email_last_error:

@@ -14,6 +14,13 @@ from django.conf import settings
 from .models import Transaction, DiscountCode
 from .utils import calculate_amount, apply_purchase
 from .throttling import PriceCheckThrottle
+from .serializers import (
+    PriceQuerySerializer,
+    DiscountQuerySerializer,
+    PaymentRequestSerializer,
+    CallbackSerializer,
+    PurchasedItemsSerializer,
+)
 from django.apps import apps
 
 logger = logging.getLogger(__name__)
@@ -26,6 +33,7 @@ class PurchasedItemsView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsVerified, ProfileCompleted]
+    serializer_class = PurchasedItemsSerializer
 
     def get(self, request):
         user = request.user
@@ -69,6 +77,7 @@ class PriceView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsVerified, ProfileCompleted]
+    serializer_class = PriceQuerySerializer
 
     def get(self, request):
         items = request.query_params.getlist("items")
@@ -93,6 +102,7 @@ class DiscountView(APIView):
 
     permission_classes = [IsAuthenticated, IsVerified, ProfileCompleted]
     throttle_classes = [PriceCheckThrottle]
+    serializer_class = DiscountQuerySerializer
 
     def get(self, request):
         discount_code = request.query_params.get("code", "").strip()
@@ -142,6 +152,7 @@ class DiscountView(APIView):
 
 class PaymentView(APIView):
     permission_classes = [IsAuthenticated, IsVerified, ProfileCompleted]
+    serializer_class = PaymentRequestSerializer
 
     def post(self, request):
         user = request.user
@@ -230,6 +241,7 @@ class PaymentView(APIView):
 
 class CallbackView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = CallbackSerializer
 
     def post(self, request):
         data = request.data

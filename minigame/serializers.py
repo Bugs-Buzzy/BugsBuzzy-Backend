@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from typing import Optional, Dict
 from .models import MinigameResult
 
 
@@ -10,7 +11,7 @@ class MinigameResultSerializer(serializers.ModelSerializer):
         fields = ["carrot_count", "coin_count", "discount_percentage", "coupon_code", "created_at"]
         read_only_fields = ["discount_percentage", "coupon_code", "created_at"]
 
-    def get_coupon_code(self, obj):
+    def get_coupon_code(self, obj: MinigameResult) -> Optional[Dict[str, int]]:
         if obj.coupon_code:
             return {"code": obj.coupon_code.code, "percentage": obj.coupon_code.percentage}
         return None

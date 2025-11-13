@@ -12,6 +12,12 @@ from .serializers import (
     InPersonMemberSerializer,
     InPersonCompetitionSerializer,
     InPersonSubmissionSerializer,
+    InPersonTeamCreateSerializer,
+    InPersonTeamJoinSerializer,
+    InPersonTeamUpdateSerializer,
+    InPersonVerifyTeamCodeSerializer,
+    InPersonSubmissionCreateSerializer,
+    TeamNumberSerializer,
 )
 
 
@@ -19,6 +25,7 @@ class CompetitionStatusView(APIView):
     """Get current competition phase status"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonCompetitionSerializer
 
     def get(self, request):
         comp = InPersonCompetition.get_solo()
@@ -30,6 +37,7 @@ class MyTeamView(APIView):
     """Get user's team"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonTeamSerializer
 
     def get(self, request):
         # Check if user is leader (any non-disbanded team)
@@ -57,6 +65,7 @@ class TeamCreateView(APIView):
     """Create a new team"""
 
     permission_classes = [permissions.IsAuthenticated, HasPurchased("inperson")]
+    serializer_class = InPersonTeamCreateSerializer
 
     def post(self, request):
         # Check if already has team (any non-disbanded)
@@ -98,6 +107,7 @@ class TeamJoinView(APIView):
     """Join a team with invite code"""
 
     permission_classes = [permissions.IsAuthenticated, HasPurchased("inperson")]
+    serializer_class = InPersonTeamJoinSerializer
 
     def post(self, request):
         invite_code = request.data.get("invite_code")
@@ -127,6 +137,7 @@ class TeamLeaveView(APIView):
     """Leave team"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonTeamSerializer
 
     def post(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id)
@@ -159,6 +170,7 @@ class TeamDisbandView(APIView):
     """Disband team (leader only)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonTeamSerializer
 
     def post(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
@@ -178,6 +190,7 @@ class TeamInviteCodeRevokeView(APIView):
     """Revoke and regenerate invite code (leader only)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonTeamSerializer
 
     def delete(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
@@ -204,6 +217,7 @@ class TeamUpdateView(APIView):
     """Update team info (leader only)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonTeamUpdateSerializer
 
     def _update_team(self, request, team_id):
         team = get_object_or_404(InPersonTeam, id=team_id, leader=request.user)
@@ -237,6 +251,7 @@ class TeamMembersView(APIView):
     """Get team members"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonMemberSerializer
 
     def get(self, request, team_id):
         team = get_object_or_404(InPersonTeam.objects.exclude(status="disbanded"), id=team_id)
@@ -255,6 +270,7 @@ class SubmissionCreateView(APIView):
     """Submit for a phase"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonSubmissionCreateSerializer
 
     def post(self, request):
         # Get user's team
@@ -367,6 +383,7 @@ class SubmissionListView(APIView):
     """Get team's submissions"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = InPersonSubmissionSerializer
 
     def get(self, request):
         # Get user's team (any non-disbanded)
@@ -394,6 +411,7 @@ class VerifyTeamCodeView(APIView):
 
     permission_classes = [permissions.AllowAny]
     authentication_classes = []  # No authentication required
+    serializer_class = InPersonVerifyTeamCodeSerializer
 
     def post(self, request):
         upload_code = request.data.get("code")
@@ -440,6 +458,7 @@ class GetTeamByNumberView(APIView):
 
     permission_classes = [permissions.AllowAny]
     authentication_classes = []  # No authentication required
+    serializer_class = TeamNumberSerializer
 
     def get(self, request, team_number):
         try:

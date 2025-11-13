@@ -7,11 +7,22 @@ from .models import OnlineTeam, OnlineMember
 from payments.models import Transaction
 from .serializers import OnlineTeamSerializer, OnlineMemberSerializer
 from .models import OnlineCompetition, OnlineSubmission
-from .serializers import OnlineCompetitionSerializer, OnlineSubmissionSerializer
+from .serializers import (
+    OnlineCompetitionSerializer,
+    OnlineSubmissionSerializer,
+    OnlineTeamCreateSerializer,
+    OnlineTeamJoinSerializer,
+    OnlineTeamUpdateSerializer,
+    OnlineVerifyTeamCodeSerializer,
+    OnlineSubmissionCreateSerializer,
+    OnlineTeamSerializer,
+    OnlineMemberSerializer,
+)
 
 
 class CompetitionStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineCompetitionSerializer
 
     def get(self, request):
         comp = OnlineCompetition.get_solo()
@@ -21,6 +32,7 @@ class CompetitionStatusView(APIView):
 
 class SubmissionCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineSubmissionCreateSerializer
 
     def post(self, request):
         # find the user's team
@@ -97,6 +109,7 @@ class SubmissionCreateView(APIView):
 
 class SubmissionListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineSubmissionSerializer
 
     def get(self, request):
         team = OnlineTeam.objects.filter(leader=request.user).first()
@@ -117,6 +130,7 @@ class SubmissionListView(APIView):
 
 class MyTeamView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamSerializer
 
     def get(self, request):
         team = OnlineTeam.objects.filter(leader=request.user).first()
@@ -136,6 +150,7 @@ class MyTeamView(APIView):
 
 class TeamCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamCreateSerializer
 
     def post(self, request):
         name = request.data.get("name")
@@ -165,6 +180,7 @@ class TeamCreateView(APIView):
 
 class TeamJoinView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamJoinSerializer
 
     def post(self, request):
         invite_code = request.data.get("invite_code")
@@ -191,6 +207,7 @@ class TeamJoinView(APIView):
 
 class TeamLeaveView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamSerializer
 
     def post(self, request, team_id):
         team = get_object_or_404(OnlineTeam, id=team_id)
@@ -222,6 +239,7 @@ class TeamUpdateView(APIView):
     """Update team info (leader only)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamUpdateSerializer
 
     def _update_team(self, request, team_id):
         team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
@@ -255,6 +273,7 @@ class TeamDeleteView(APIView):
     """Delete inactive team (leader only, before payment)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamSerializer
 
     def delete(self, request, team_id):
         team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
@@ -275,6 +294,7 @@ class TeamActivateView(APIView):
     """Activate team after payment (leader only)"""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OnlineTeamSerializer
 
     def post(self, request, team_id):
         team = get_object_or_404(OnlineTeam, id=team_id, leader=request.user)
@@ -303,6 +323,7 @@ class VerifyTeamCodeView(APIView):
 
     permission_classes = [permissions.AllowAny]
     authentication_classes = []  # No authentication required
+    serializer_class = OnlineVerifyTeamCodeSerializer
 
     def post(self, request):
         upload_code = request.data.get("code")
