@@ -247,9 +247,9 @@ local_settings.py
 settings_local.py
 
 # Test files
-test_*.py
-*_test.py
-tests/
+# test_*.py
+# *_test.py
+# tests/
 
 # Documentation builds
 docs/_build/
@@ -280,8 +280,8 @@ sample_*.py
 example_*.py
 demo_*.py
 create_sample_*.py
-test_*.py
-*_test.py
+# test_*.py
+# *_test.py
 
 # Configuration files with sensitive data
 config_local.py
@@ -366,11 +366,6 @@ performance_metrics.json
 # VSCode/IDE
 .vscode/
 .idea/
-
-# Test files
-*.test.py
-test_*.py
-*_test.py
 
 # Migration cache
 migrations/__pycache__/

@@ -8,7 +8,7 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from accounts.models import User
-from .models import Transaction, PurchasingItem
+from payments.models import Transaction, PurchasingItem
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
