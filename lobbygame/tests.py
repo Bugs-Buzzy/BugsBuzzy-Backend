@@ -35,7 +35,9 @@ class LobbygameAPITestCase(TestCase):
     def test_lobbygame_get_discount_with_uuid(self):
         """GET /lobbygame/discount-code/with-request-uuid/<uuid>/"""
         result = LobbygameResult.objects.first()
-        response = self.client.get(f"/lobbygame/discount-code/with-request-uuid/{result.request_uuid}")
+        response = self.client.get(
+            f"/lobbygame/discount-code/with-request-uuid/{result.request_uuid}"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("status", response.data)
 

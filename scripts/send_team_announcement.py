@@ -55,6 +55,13 @@ def send_announcement_to_team(team, title, description=None, team_type="inperson
         else:
             print(f"⚠ اعلان برای {user.email} قبلاً وجود داشت")
 
+        if not user_announcement.email_sent_at:
+            try:
+                user_announcement.send_email()
+                print(f"✓ ایمیل برای {user.email} ارسال شد")
+            except Exception as exc:  # pragma: no cover - script usage
+                print(f"⚠ ارسال ایمیل برای {user.email} با خطا مواجه شد: {exc}")
+
     print(f"\n✅ اعلان '{title}' برای تیم '{team.name}' ایجاد شد")
     print(f"📊 تعداد اعضا: {len(team_members)} | اعلان‌های جدید: {created_count}")
 
@@ -73,10 +80,18 @@ def send_announcement_to_all_teams(
         team_type: نوع تیم ('inperson' یا 'gamejam')
         filter_active: اگر True باشد، فقط تیم‌های active را شامل می‌شود
     """
-    if team_type == "inperson":
-        teams = InPersonTeam.objects.all()
-        if filter_active:
-            teams = teams.filter(status="active")
+    if created:
+        created_count += 1
+        print(f"✓ اعلان برای {user.email} ایجاد شد")
+    else:
+        print(f"⚠ اعلان برای {user.email} قبلاً وجود داشت")
+
+    if not user_announcement.email_sent_at:
+        try:
+            user_announcement.send_email()
+            print(f"✓ ایمیل برای {user.email} ارسال شد")
+        except Exception as exc:  # pragma: no cover - script usage
+            print(f"⚠ ارسال ایمیل برای {user.email} با خطا مواجه شد: {exc}")
     else:  # gamejam
         teams = OnlineTeam.objects.all()
         if filter_active:
