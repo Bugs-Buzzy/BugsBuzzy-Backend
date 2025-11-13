@@ -1,0 +1,248 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    :root {
+        --announce-surface: var(--body-bg, #fff);
+        --announce-border: var(--hairline-color, #d1d5db);
+        --announce-muted: var(--body-quiet-color, #4a5568);
+        --announce-chip-bg: rgba(47, 128, 237, 0.1);
+        --announce-chip-border: rgba(47, 128, 237, 0.35);
+        --announce-field-bg: rgba(55, 77, 99, 0.75);
+        --announce-field-border-focus: rgba(76, 110, 245, 0.5);
+        --announce-shadow: 0 16px 28px -20px rgba(15, 23, 42, 0.28);
+    }
+
+    .announcement-create {
+        padding: 1.6rem;
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .announcement-create__summary {
+        border: 1px solid var(--announce-border);
+        border-radius: 12px;
+        padding: 1.2rem 1.4rem;
+        display: grid;
+        gap: 0.65rem;
+        background: var(--announce-surface);
+        background: color-mix(in srgb, var(--primary, #4c6ef5) 12%, var(--announce-surface) 88%);
+        box-shadow: var(--announce-shadow);
+    }
+
+    .announcement-create__summary strong {
+        font-size: 1.05rem;
+    }
+
+    .announcement-create__hint {
+        font-size: 0.9rem;
+        color: var(--announce-muted);
+    }
+
+    .announcement-create details {
+        margin: 0.25rem 0 0.5rem;
+    }
+
+    .announcement-create details summary {
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .announcement-create__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .announcement-create__chips li {
+        background: var(--announce-chip-bg);
+        border: 1px solid var(--announce-chip-border);
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.85rem;
+    }
+
+    .announcement-create__form {
+    	background: var(--announce-surface);
+        border: 1px solid var(--announce-border);
+        border-radius: 14px;
+        padding: 1.65rem;
+        display: grid;
+        gap: 1.3rem;
+        box-shadow: var(--announce-shadow);
+    }
+
+    .announcement-create__form fieldset.module.aligned {
+        border: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .announcement-create__form fieldset legend {
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .announcement-create__form .form-row {
+        display: grid;
+        gap: 0.45rem;
+        background: var(--announce-field-bg);
+        border: 1px solid var(--announce-border);
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .announcement-create__form .form-row:is(:hover, :focus-within) {
+        border-color: var(--announce-field-border-focus);
+        box-shadow: 0 0 0 4px var(--announce-field-border-focus);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--announce-field-border-focus) 35%, transparent);
+    }
+
+    .announcement-create__form .form-row label {
+        font-weight: 600;
+    }
+
+    .announcement-create__form :is(input[type="text"], input[type="email"], input[type="url"], input[type="number"], select, textarea) {
+		height: auto;
+		width: auto;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+        background: var(--announce-surface);
+        background: color-mix(in srgb, var(--announce-surface) 86%, transparent);
+        color: inherit;
+    }
+
+    .announcement-create__form :is(input[type="text"], input[type="email"], input[type="url"], input[type="number"], select, textarea):focus {
+        outline: none;
+        border-color: var(--announce-field-border-focus);
+        box-shadow: 0 0 0 2px var(--announce-field-border-focus);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--announce-field-border-focus) 45%, transparent);
+    }
+
+    .announcement-create__form .help {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--announce-muted);
+    }
+
+    .announcement-create__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .announcement-create__button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 150px;
+        padding: 0.65rem 1.35rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border-radius: 5px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .announcement-create__button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px -18px rgba(76, 110, 245, 0.45);
+    }
+
+    .announcement-create__button:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    .announcement-create__button.default {
+        background: linear-gradient(135deg, var(--primary, #4c6ef5), #233876);
+        background: linear-gradient(135deg, var(--primary, #4c6ef5), color-mix(in srgb, var(--primary, #4c6ef5) 80%, #233876 20%));
+        color: #fff;
+    }
+
+    .announcement-create__button--secondary {
+        background: transparent;
+        border-color: var(--announce-border);
+        border-color: color-mix(in srgb, var(--primary, #4c6ef5) 45%, transparent);
+        color: var(--primary, #4c6ef5);
+    }
+</style>
+
+<div class="module announcement-create">
+    <h2>Send announcement emails</h2>
+
+    <div class="announcement-create__summary">
+        <div>
+            {% if users_count == 1 %}
+                <strong>1 user selected.</strong>
+            {% else %}
+                <strong>{{ users_count }} users selected.</strong>
+            {% endif %}
+            <p class="announcement-create__hint">
+                Create a fresh announcement or reuse an existing one, then send it to every selected user.
+            </p>
+        </div>
+
+        {% if sample_users %}
+            <details>
+                <summary>Preview selected users</summary>
+                <ul class="announcement-create__chips">
+                    {% for user in sample_users %}
+                        <li>
+                            {{ user.email }}
+                            {% if user.get_full_name %}
+                                &middot; {{ user.get_full_name }}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </details>
+        {% endif %}
+
+        <p class="announcement-create__hint">
+            Emails are sent automatically as soon as the user-announcement relation is created.
+        </p>
+    </div>
+
+    <form method="post" novalidate class="announcement-create__form">
+        {% csrf_token %}
+        {% if selection_token %}
+            <input type="hidden" name="token" value="{{ selection_token }}">
+        {% endif %}
+        {% if raw_ids %}
+            <input type="hidden" name="ids" value="{{ raw_ids }}">
+        {% endif %}
+
+        <fieldset class="module aligned">
+            <legend>Announcement details</legend>
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="form-row">
+                    {{ field.errors }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                </div>
+            {% endfor %}
+        </fieldset>
+
+        <div class="announcement-create__actions">
+            <a class="announcement-create__button announcement-create__button--secondary" href="..">Cancel</a>
+            <input type="submit" class="default announcement-create__button" value="Send emails">
+        </div>
+    </form>
+</div>
+{% endblock %}

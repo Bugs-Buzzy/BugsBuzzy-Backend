@@ -68,7 +68,7 @@ INSTALLED_APPS += [
     "inperson",
     "workshops",
     "gamejam",
-    "announcement",
+    "announcement.apps.AnnouncementConfig",
     "leaderboard",
 ]
 

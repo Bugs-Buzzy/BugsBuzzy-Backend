@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
@@ -5,7 +7,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import User
 from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
 from django.urls import path
 from django.db.models import Q
 
@@ -306,12 +309,20 @@ class CustomUserAdmin(UserAdmin):
 
     def create_announcement_for_selected(self, request, queryset):
         """Redirect to a custom admin view to enter announcement details for the selected users."""
-        selected = request.POST.getlist("_selected_action")
-        if not selected:
+
+        selected_ids = list(
+            queryset.values_list("pk", flat=True)
+        )  # includes select-across selections
+        if not selected_ids:
             self.message_user(request, "No users selected.", level=messages.WARNING)
-            return
-        ids = ",".join(selected)
-        return redirect(f"create_announcement/?ids={ids}")
+            return None
+
+        selection_token = uuid.uuid4().hex
+        session_key = f"announcement_selection_{selection_token}"
+        request.session[session_key] = [int(pk) for pk in selected_ids]
+        request.session.modified = True
+
+        return redirect(f"create_announcement/?token={selection_token}")
 
     create_announcement_for_selected.short_description = "Create Announcement for selected users"
 
@@ -327,55 +338,140 @@ class CustomUserAdmin(UserAdmin):
         return custom + urls
 
     class AnnouncementCreateForm(forms.Form):
-        title = forms.CharField(max_length=255)
-        description = forms.CharField(widget=forms.Textarea, required=False)
+        existing_announcement = forms.ModelChoiceField(
+            queryset=Announcement.objects.order_by("-created_at"),
+            required=False,
+            label="Existing Announcement",
+        )
+        title = forms.CharField(
+            max_length=255,
+            required=False,
+            label="Announcement Title",
+            help_text="If no existing announcement is selected, enter a new title.",
+        )
+        description = forms.CharField(
+            widget=forms.Textarea,
+            required=False,
+            label="Announcement Description (Markdown allowed)",
+            help_text="You can write text with Markdown or simple HTML.",
+        )
+
+        def clean(self):
+            cleaned_data = super().clean()
+            announcement = cleaned_data.get("existing_announcement")
+            title = cleaned_data.get("title")
+            if not announcement and not title:
+                raise forms.ValidationError(
+                    "Either select an existing announcement or enter a new title."
+                )
+            return cleaned_data
 
     def create_announcement_view(self, request):
-        ids = request.GET.get("ids", "")
-        user_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
-        users = User.objects.filter(id__in=user_ids)
+        token = request.GET.get("token") or request.POST.get("token")
+        ids_param = (
+            request.GET.get("ids") if request.method == "GET" else request.POST.get("ids", "")
+        )
+
+        session_key = f"announcement_selection_{token}" if token else None
+        session_ids = request.session.get(session_key, []) if session_key else []
+
+        if session_ids:
+            user_ids = [int(pk) for pk in session_ids]
+        else:
+            user_ids = [int(x) for x in (ids_param or "").split(",") if x.strip().isdigit()]
+
+        # ensure uniqueness and maintain selection order
+        seen = set()
+        ordered_user_ids = []
+        for pk in user_ids:
+            if pk not in seen:
+                seen.add(pk)
+                ordered_user_ids.append(pk)
+
+        if not ordered_user_ids:
+            self.message_user(
+                request,
+                "No users selected to send announcement.",
+                level=messages.WARNING,
+            )
+            return redirect("..")
+
+        users_map = {
+            user.id: user
+            for user in User.objects.filter(id__in=ordered_user_ids).only(
+                "id", "email", "first_name", "last_name"
+            )
+        }
+        users = [users_map[pk] for pk in ordered_user_ids if pk in users_map]
+
+        if not users:
+            self.message_user(
+                request,
+                "No users found to send announcement.",
+                level=messages.WARNING,
+            )
+            if session_key and session_key in request.session:
+                del request.session[session_key]
+                request.session.modified = True
+            return redirect("..")
 
         if request.method == "POST":
             form = self.AnnouncementCreateForm(request.POST)
             if form.is_valid():
-                title = form.cleaned_data["title"]
-                description = form.cleaned_data.get("description")
-                # always send and use default subject
-                subject = f"اطلاعیه: {title}"
+                announcement = form.cleaned_data.get("existing_announcement")
+                created_announcement = False
 
-                ann = Announcement.objects.create(title=title, description=description)
-                created = 0
-                for u in users:
-                    UserAnnouncement.objects.get_or_create(announcement=ann, user=u)
-                    created += 1
+                if announcement is None:
+                    announcement = Announcement.objects.create(
+                        title=form.cleaned_data["title"],
+                        description=form.cleaned_data.get("description"),
+                    )
+                    created_announcement = True
 
-                # synchronous email send (minimal)
-                from django.template.loader import render_to_string
-                from django.core.mail import send_mail
-                from django.conf import settings
-
-                for u in users:
-                    try:
-                        if u.email:
-                            html_body = render_to_string(
-                                "emails/announcement_email.html",
-                                {
-                                    "announcement": ann,
-                                    "user_name": u.first_name + " " + u.last_name,
-                                },
+                created_links = 0
+                skipped_links = 0
+                triggered_sends = 0
+                for user in users:
+                    user_announcement, created = UserAnnouncement.objects.get_or_create(
+                        announcement=announcement,
+                        user=user,
+                    )
+                    if created:
+                        created_links += 1
+                        triggered_sends += 1  # email will be sent via signals
+                    elif not user_announcement.email_sent_at:
+                        # Attempt to send if the record exists but email was never sent
+                        try:
+                            if user_announcement.send_email():
+                                triggered_sends += 1
+                        except Exception as exc:
+                            messages.error(
+                                request,
+                                f"Failed to send email to {user.email}: {exc}",
                             )
-                            send_mail(
-                                subject=subject,
-                                message=description or "",
-                                html_message=html_body,
-                                from_email=settings.ANNOUNCEMENT_FROM_EMAIL,
-                                recipient_list=[u.email],
-                                fail_silently=False,
-                            )
-                    except Exception:
-                        continue
+                    else:
+                        skipped_links += 1
 
-                self.message_user(request, f"Created announcement and linked to {created} users.")
+                if created_announcement:
+                    self.message_user(
+                        request,
+                        f"New announcement created and registered for {created_links} users.",
+                    )
+                else:
+                    self.message_user(
+                        request,
+                        f"Selected announcement registered for {created_links} new users and {skipped_links} were duplicates.",
+                    )
+
+                if triggered_sends:
+                    self.message_user(
+                        request,
+                        f"Email will be sent to {triggered_sends} users.",
+                    )
+
+                if session_key and session_key in request.session:
+                    del request.session[session_key]
+                    request.session.modified = True
                 return redirect("..")
         else:
             form = self.AnnouncementCreateForm()
@@ -384,10 +480,13 @@ class CustomUserAdmin(UserAdmin):
         context.update(
             {
                 "form": form,
-                "users_count": users.count(),
+                "users_count": len(users),
+                "sample_users": users[:10],
+                "selection_token": token,
+                "raw_ids": ids_param,
             }
         )
-        return render(request, "admin/announcement/create_from_users.html", context)
+        return TemplateResponse(request, "admin/announcement/create_from_users.html", context)
 
 
 admin.site.register(User, CustomUserAdmin)

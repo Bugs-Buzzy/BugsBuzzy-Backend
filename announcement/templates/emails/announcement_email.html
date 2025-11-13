@@ -40,12 +40,15 @@
                             </p>
                             
                             <div class="announcement-body" style="color: #555; font-size: 15px; line-height: 1.7; text-align: right; margin: 0 0 25px; direction: rtl; unicode-bidi: plaintext;">
-                                {{ announcement.description }}
-                                <br><br>
-                                <p style="margin: 10px 0 0;">
-                                    با آرزوی موفقیت،<br>
-                                    تیم برگزاری باگزبازی
-                                </p>
+                                {% if announcement_body_html %}
+                                    {{ announcement_body_html|safe }}
+                                {% else %}
+                                    <p style="margin: 0;">اطلاعیه جدیدی برای شما ثبت شده است؛ برای بررسی آن به پنل کاربری خود مراجعه کنید.</p>
+                                {% endif %}
+                                <div style="margin: 16px 0 0;">
+                                    <p style="margin: 0 0 4px;">با آرزوی موفقیت،</p>
+                                    <p style="margin: 0;">تیم برگزاری باگزبازی</p>
+                                </div>
                             </div>
                         </td>
                     </tr>
