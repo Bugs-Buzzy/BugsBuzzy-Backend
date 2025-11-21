@@ -281,9 +281,9 @@ class OnlineSubmissionAdmin(admin.ModelAdmin):
     @admin.display(description="Content")
     def content_preview(self, obj):
         if obj.content:
-            preview = obj.content[:200] + "..." if len(obj.content) > 200 else obj.content
             return format_html(
-                '<div style="white-space:pre-wrap;max-width:600px;">{}</div>', preview
+                '<div style="white-space:pre-wrap; max-width:600px; max-height:400px; overflow:auto; padding:8px; border:1px solid #e5e7eb; border-radius:4px;">{}</div>',
+                obj.content,
             )
         return "-"
 
